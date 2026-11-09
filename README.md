@@ -1,2 +1,2 @@
 # ontmoet-de-oudegracht
-Webapplicatie en CMS voor Het Utrechts Archief — MA Studio
+Webapplicatie en CMS voor Het Utrechts Archief — M & A Studio
