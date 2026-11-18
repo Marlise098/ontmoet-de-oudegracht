@@ -1,0 +1,41 @@
+ONTMOET DE OUDEGRACHT — LOKALE KIJKVERSIE VOOR WINDOWS
+
+ZO OPEN JE DE WEBSITE
+1. Klik met de rechtermuisknop op het gedownloade zipbestand.
+2. Kies 'Alles uitpakken' en pak de volledige map uit.
+3. Open de uitgepakte map 'Ontmoet de Oudegracht - Windows'.
+4. Dubbelklik op 'Open-website.html'.
+   Wordt de naam zonder .html getoond? Open dan 'Open-website'.
+
+Gebruik een recente versie van Microsoft Edge of Google Chrome.
+Je hebt geen Node.js, pnpm, Replit of webserver nodig.
+De website en de meegeleverde video werken zonder internet.
+
+BLIJF DE MAP BIJ ELKAAR HOUDEN
+Het bestand Open-website.html en de map media horen bij elkaar.
+Verplaats niet alleen het HTML-bestand. Open de website ook niet
+rechtstreeks vanuit de zip: pak eerst alles uit.
+
+WAT WERKT
+- De aangeleverde film bekijken, pauzeren en doorspoelen.
+- Geluid aan- en uitzetten.
+- Nederlands of Engels kiezen.
+- De voorbeeldplekken op de schematische kaart kiezen.
+- Het informatievenster openen.
+- Via CMS-demo het lokale beheervoorbeeld bekijken.
+  De navigatie naar het CMS gebruikt #/cms in de adresbalk.
+
+HUIDIGE BEPERKINGEN
+- De kaart is nog niet gekoppeld aan gecontroleerde filmtijdcodes.
+- Bronvermelding, datering en gebruiksrechten zijn nog niet gecontroleerd.
+- Historische teksten en extra perioden zijn nog niet aangevuld.
+- Het CMS is een demo. Wijzigingen verdwijnen bij herladen of verlaten;
+  het slaat geen gegevens op en publiceert niets.
+- Volledige WCAG 2.1 AA-conformiteit is nog niet vastgesteld.
+  De beoordeling voor ondertiteling, tekstversie en audiodescriptie
+  staat nog open.
+
+DIT IS EEN KIJKVERSIE
+De live website in Replit is niet gewijzigd.
+Voor verdere ontwikkeling gebruik je de eerdere broncode-zip.
+Gebruik of publiceer het beeldmateriaal alleen met de juiste toestemming.
