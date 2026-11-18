@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Ontmoet de Oudegracht"
+description = "Een interactieve digitale tentoonstelling voor Het Utrechts Archief, met een groot-touchscreen bezoekerservaring en een bijbehorend CMS voor medewerkers."
+version = "1.0.0"
+id = "artifacts/ontmoet-oudegracht"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25747
+
+[services.development]
+run = "pnpm --filter @workspace/ontmoet-oudegracht run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/ontmoet-oudegracht", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/ontmoet-oudegracht/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25747"
+BASE_PATH = "/"
