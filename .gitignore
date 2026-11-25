@@ -1,0 +1,6 @@
+# Geüploade foto's niet in git (alleen de lege map)
+src/public/uploads/*
+!src/public/uploads/.gitkeep
+
+# Lokale testdatabases
+*.sqlite
