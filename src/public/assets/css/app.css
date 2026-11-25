@@ -302,7 +302,7 @@ svg { fill: currentColor; }
 
 /* ---------- Tijdlijn met hotspots ---------- */
 
-.timeline { padding: 1.6rem .4rem .4rem; }
+.timeline { padding: 1.6rem 1.3rem .4rem; }
 .timeline-track {
   position: relative;
   height: 14px;
