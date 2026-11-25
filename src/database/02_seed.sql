@@ -31,7 +31,7 @@ INSERT INTO locations (id, code, title_nl, title_en, text_nl, text_en, start_tim
 (3, '1b', 'Café De Postillon / Gaardbrug OG 148', 'Café De Postillon / Gaardbrug OG 148',
  'Vlak bij de Gaardbrug staat aan de Lijnmarkt het pand waarin Café De Postillon zit. Op de foto uit het archief zie je de voorgevel van het café, met de brug ernaast. Kijk tijdens de film goed naar de huizen links van de boot als de Gaardbrug dichterbij komt.',
  'Close to the Gaardbrug, on the Lijnmarkt, stands the building that houses Café De Postillon. The archive photo shows the front of the café, with the bridge next to it. Watch the houses on the left of the boat in the film as the Gaardbrug comes closer.',
- 40, 52.089330, 5.121020, 1),
+ 40, 52.089380, 5.120830, 1),
 
 (4, '1c', 'Lijnmarkt / Lichte Gaard', 'Lijnmarkt / Lichte Gaard',
  'Na de Gaardbrug vaar je tussen de achtergevels van de huizen aan de Lijnmarkt aan de ene kant en de Lichte en Donkere Gaard aan de andere kant. In de verte ligt de Maartensbrug al. De foto''s uit het archief laten dit stuk gracht door de jaren heen zien: van een strenge winter met grote ijspegels tot de werven van nu.',
