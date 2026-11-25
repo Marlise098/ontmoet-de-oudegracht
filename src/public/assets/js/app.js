@@ -617,16 +617,13 @@
     }, 5000);
   }
 
+  /**
+   * Terug naar het begin. De pagina wordt opnieuw geladen, zodat wijzigingen
+   * uit het CMS meteen op het digibord staan.
+   */
   function resetApp() {
-    Object.values(dialogs).forEach((d) => { if (d.open) closeDialog(d); });
     video.pause();
-    video.currentTime = 0;
-    setCurrent(null);
-    setLang('nl');
-    homeMap();
-    setFollow(true);
-    onTime();
-    openDialog('intro');
+    window.location.reload();
   }
 
   /* ------------------------------------------------------------------
