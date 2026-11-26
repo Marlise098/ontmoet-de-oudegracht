@@ -128,8 +128,9 @@ CMS: route, teksten en gebruikers
 
 | # | Scenario | Verwacht | Resultaat |
 |---|---|---|---|
-| H1 | De app openen op 1920×1080 (digibord) | Het welkomstscherm met logo, uitleg, taalkeuze en de knop *Start de boottocht* | ✓ Geslaagd |
-| H2 | Op *Start de boottocht* tikken | Het welkomstscherm sluit en de film start | ✓ Geslaagd |
+| H1 | De app openen op 1920×1080 (digibord) | De wachtstand: de film speelt zonder geluid, de boot vaart mee en onderin staat *Tik om aan boord te gaan / Tap to come aboard* | ✓ Geslaagd |
+| H1b | Ergens op het scherm tikken in de wachtstand | Het welkomstscherm met logo, uitleg, taalkeuze en de knop *Start de boottocht*; de film pauzeert | ✓ Geslaagd |
+| H2 | Op *Start de boottocht* tikken | Het welkomstscherm sluit en de film start vanaf het begin, met geluid | ✓ Geslaagd |
 | H3 | De film naar 1:58 spoelen | De informatiekaart toont *3 De Kalisbrug*, de hotspot in beeld zegt "Je vaart nu langs De Kalisbrug", hotspot 3 is rood in de tijdlijn en op de kaart, en het bootje vaart bij de Kalisbrug | ✓ Geslaagd |
 | H4 | Op hotspot 2 op de kaart tikken | De film springt naar 1:24 en de informatie toont *De Maartensbrug* | ✓ Geslaagd |
 | H5 | Naar het Engels wisselen | Alle teksten, de titel en de knoppen in het Engels ("Meet the Oudegracht", "Where is the boat?") | ✓ Geslaagd |
@@ -139,11 +140,14 @@ CMS: route, teksten en gebruikers
 | H9 | *Volg de boot* aan en de film afspelen | Het bootje blijft in het midden van de kaart | ✓ Geslaagd |
 | H10 | De app op iPad staand (820×1180) | Film, bediening, tijdlijn, kaart en informatie staan onder elkaar; alles is bruikbaar | ✓ Geslaagd (na oplossing 3) |
 | H11 | Colofon openen via het logo | Een pop-up met logo, Over HUA, Over de app, makers, opdrachtgever en bronnen | ✓ Geslaagd |
-| H12 | De app niet aanraken, met de film gepauzeerd | De app laadt opnieuw en toont het welkomstscherm | ✓ Geslaagd (getest met een reset na 6 seconden; standaard is 180 seconden) |
+| H12 | De app niet aanraken, met de film gepauzeerd of met het welkomstscherm open | De app laadt opnieuw en staat weer in de wachtstand | ✓ Geslaagd (getest met een reset na 10 seconden; standaard is 180 seconden) |
 | H13 | Het CMS-formulier van een plek | Stap 1–5 duidelijk, de film om de tijd te kiezen, de kaart met de gekozen plek als rode stip | ✓ Geslaagd |
 | H14 | Bediening met het toetsenbord | K speelt af of pauzeert, M zet het geluid uit | ✓ Geslaagd |
 | H15 | Tab door alle knoppen; Esc sluit vensters | Zichtbare focusrand; vensters sluiten met Esc | ◻ Nog te testen met een echte gebruiker (de focusstijl en `<dialog>` zijn ingebouwd) |
 | H16 | Archieffoto's laden vanuit de beeldbank (images.memorix.nl) | De foto's verschijnen | ⚠ Niet te testen in onze testomgeving, die geen internet heeft. Op een computer met internet testen. Is een foto niet bereikbaar, dan verbergt de app hem netjes. |
+| H17 | De app op 3840×2160 (4K-digibord zonder schaling) | Alles is evenredig groter en ziet eruit als op Full HD; slepen op de kaart beweegt de kaart even ver als de vinger | ✓ Geslaagd |
+| H18 | *Zo ziet het er nu uit* en dan *Rondkijken in 3D* | Street View van de plek binnen de app; tikken in Google Maps opent geen nieuw tabblad | ✓ Geslaagd |
+| H19 | Lang vasthouden op tekst (aanraakscherm) | Er wordt geen tekst geselecteerd en er opent geen menu | ✓ Geslaagd (`user-select: none`, contextmenu uit op aanraakschermen) |
 
 ## 4. Toegankelijkheid
 
@@ -152,7 +156,8 @@ CMS: route, teksten en gebruikers
 | Alle iconknoppen hebben een `aria-label` (NL en EN) | ✓ |
 | Formulierfouten in het CMS zijn gekoppeld met `aria-invalid` en `aria-describedby`, plus een foutoverzicht met links | ✓ |
 | Kleurcontrast van de tekst (paars #14285a op wit) | ✓ 13:1 |
-| Aanraakdoelen minimaal 48 px, op het digibord 56–72 px | ✓ |
+| Aanraakdoelen minimaal 48 px (ook de nummers in de tijdlijn en de volumeschuif), op het digibord 52–72 px | ✓ |
+| Kleinste tekst op het digibord minimaal 15 px (hints, bronvermelding, kopjes) | ✓ |
 | `prefers-reduced-motion` zet de animaties uit | ✓ |
 | Alternatief voor de kaart voor schermlezers (lijst met plekken) | ✓ |
 | Ondertiteling of tekstversie van de film | ⚠ Nog open. De film heeft tussentitels en muziek. Een tekstversie is een verbetervoorstel. |

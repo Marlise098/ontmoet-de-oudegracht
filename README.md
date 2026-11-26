@@ -15,10 +15,11 @@ Medewerkers beheren alle inhoud zelf via een eenvoudig CMS.
 - Een **echte kaart van Utrecht** (PDOK, de kaartdienst van de overheid) waarop het bootje live met de film meevaart. Met één knop wissel je naar de **luchtfoto**. Je kunt in- en uitzoomen met knoppen, knijpen of scrollen, en de kaart verschuiven. De **minimap** laat zien welk stuk je bekijkt, en met **Volg de boot** blijft het bootje in beeld.
 - Bij elke plek een tekst en **foto's uit het archief**. Tik op een foto om hem groot te bekijken en in te zoomen. Bij elke foto staan de maker, het catalogusnummer en de licentie.
 - In beeld verschijnt **"Je vaart nu langs …"** zodra de boot bij een plek komt.
-- **Zo ziet het er nu uit**: een satellietbeeld van Google Maps van die plek, met een link naar de 3D-weergave.
+- **Zo ziet het er nu uit**: de plek van nu in Google Maps, van boven (satelliet) of om rond te kijken in 3D (Street View). Alles blijft binnen de app.
 - Een **welkomstscherm (intro-popup)** met uitleg en een taalkeuze tussen **Nederlands en Engels**.
 - Een **colofon** met het logo, informatie over HUA en de app, de makers en de bronnen.
-- Op het **digibord** gaat de app na een tijd zonder aanraking automatisch terug naar het welkomstscherm. Hoe lang dat duurt, stel je in via het CMS.
+- **Wachtstand voor het digibord**: zolang niemand het scherm aanraakt, speelt de film zonder geluid, vaart de boot mee en wisselen de plekken vanzelf. Zo is het scherm ook op afstand aantrekkelijk. Een tik opent het welkomstscherm. Na een tijd zonder aanraking gaat de app terug naar de wachtstand; hoe lang dat duurt, stel je in via het CMS.
+- **Groot scherm**: op een 4K-digibord zonder schaling in Windows wordt alles evenredig groter, zodat het eruitziet als op Full HD. Lang vasthouden selecteert geen tekst en opent geen menu, en niets in de app opent een nieuw tabblad.
 - **Toegankelijkheid**: de app werkt met het toetsenbord en met een schermlezer (labels en live-regio's), heeft een duidelijke focusrand en grote aanraakdoelen (minimaal 48–56 px), en houdt rekening met de instelling 'minder beweging'.
 
 **CMS** (`/cms/`): gemaakt voor medewerkers zonder technische kennis.

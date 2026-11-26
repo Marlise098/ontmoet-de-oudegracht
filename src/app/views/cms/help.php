@@ -16,7 +16,7 @@
         <ol>
             <li>Ga naar <a href="?page=locations">Plekken en foto's</a> en kies de plek.</li>
             <li>Pas de titel of tekst aan. Een lege regel begint een nieuwe alinea.</li>
-            <li>Klik onderaan op <strong>Wijzigingen opslaan</strong>. De app op het digibord toont de wijziging bij de volgende keer laden (uiterlijk na het welkomstscherm).</li>
+            <li>Klik onderaan op <strong>Wijzigingen opslaan</strong>. De app op het digibord toont de wijziging bij de volgende keer laden (uiterlijk nadat de film in de wachtstand een keer is afgespeeld).</li>
             <li>Foto's beheer je onderaan dezelfde pagina: toevoegen, volgorde wijzigen met ↑ ↓, bewerken of verwijderen.</li>
         </ol>
     </section>
@@ -51,7 +51,7 @@
 
     <section class="panel">
         <h2>Welkomsttekst en colofon</h2>
-        <p>De teksten van het welkomstscherm, het colofon en de titel pas je aan bij <a href="?page=settings">Teksten en instellingen</a>. Daar stel je ook in na hoeveel seconden zonder aanraking het digibord terugspringt naar het welkomstscherm.</p>
+        <p>De teksten van het welkomstscherm, het colofon en de titel pas je aan bij <a href="?page=settings">Teksten en instellingen</a>. Daar stel je ook in na hoeveel seconden zonder aanraking het digibord terugspringt naar de wachtstand. In de wachtstand speelt de film zonder geluid en vaart de boot mee, zodat het scherm ook op afstand opvalt.</p>
     </section>
 
     <section class="panel">

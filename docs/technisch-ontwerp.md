@@ -17,8 +17,8 @@ Medewerkers van HUA moeten de inhoud zonder technische kennis kunnen beheren via
 | Interactieve kaart die live met de video meeloopt | Een echte kaart van Utrecht (Leaflet + PDOK, met luchtfoto). Het bootje beweegt vloeiend over de gracht op basis van routepunten (tijd → plek). |
 | Info bij punten op basis van waar je vaart | Elke plek heeft een starttijd. Zodra de film die tijd bereikt, worden de tekst, de foto's en de hotspot *Je vaart nu langs* getoond. |
 | Op punten op de kaart klikken → film spoelt naar die plek | Tik op een genummerde hotspot op de kaart of in de tijdlijn. De film spoelt dan vooruit of achteruit naar die plek. |
-| Optie om Google Maps in 3D toe te passen | De knop *Zo ziet het er nu uit* toont een satellietbeeld van Google Maps met een link naar de 3D-weergave. |
-| Groot digibord met touch | Aanraakdoelen van 48–72 px, knijpen en vegen, geen hover-afhankelijkheid en een automatische reset als niemand het bord aanraakt. |
+| Optie om Google Maps in 3D toe te passen | De knop *Zo ziet het er nu uit* toont de plek in Google Maps: van boven (satelliet) of in 3D om rond te kijken (Street View). Beide draaien in een afgeschermd venster (`sandbox`), zodat een tik de app niet kan verlaten. |
+| Groot digibord met touch | Aanraakdoelen van minimaal 48 px, knijpen en vegen, geen hover-afhankelijkheid, geen tekstselectie of menu bij lang vasthouden, en een wachtstand als niemand het bord aanraakt. Op 4K zonder schaling wordt de interface met CSS `zoom` vergroot alsof het scherm Full HD is. |
 | Doelgroep families | Korte teksten, grote knoppen en een welkomstscherm met drie stappen. |
 | Extra (docent): CMS voor niet-technische gebruikers | Een eigen CMS met stapsgewijze formulieren, een filmspeler en kaart om plekken te kiezen, en een handleiding. |
 | Extra: logo en colofon-pop-up | Het HUA-logo staat linksboven en opent het colofon. Er is ook een aparte knop *Colofon*. |
@@ -138,7 +138,7 @@ erDiagram
    - **Bootje:** `OudegrachtMap.setTime()` interpoleert tussen twee routepunten. Dat gebeurt langs de *lijn van de gracht* (afstand langs de gracht), niet in een rechte lijn, zodat het bootje altijd op het water blijft. Tijdens het afspelen gebeurt dit elke frame (`requestAnimationFrame`) voor een vloeiende beweging.
 3. Tik op een hotspot → `video.currentTime = plek.start_time` → dezelfde update als bij stap 2.
 4. **Zoom en pan:** de kaart (Leaflet) ondersteunt knoppen, knijpen met twee vingers, slepen, het muiswiel, dubbeltikken en het toetsenbord (pijltjes, + en −). Tik je op een hotspot, dan zoomt de kaart in op die plek en volgt hij de boot. Als iemand de kaart verschuift, gaat *Volg de boot* automatisch uit. De foto-viewer gebruikt CSS `transform: translate() scale()`.
-5. **Reset op het digibord:** als niemand het bord aanraakt en de film niet speelt, laadt de pagina na `idle_timeout` seconden opnieuw. Wijzigingen uit het CMS staan daardoor automatisch op het bord, zonder dat iemand iets hoeft te doen.
+5. **Wachtstand en reset op het digibord:** bij het laden start de app in de wachtstand: de film speelt zonder geluid (dat mag de browser zonder aanraking), de boot vaart mee en een knop over het hele scherm vraagt om te tikken. De eerste tik opent het welkomstscherm; *Start de boottocht* start de film vanaf het begin met geluid. Als niemand het bord aanraakt en de film niet speelt, laadt de pagina na `idle_timeout` seconden opnieuw en staat de wachtstand weer aan. In de wachtstand laadt de pagina ook opnieuw aan het eind van de film. Wijzigingen uit het CMS staan daardoor automatisch op het bord, zonder dat iemand iets hoeft te doen.
 
 ## 5. CMS-ontwerp (gebruiksvriendelijkheid)
 
@@ -192,7 +192,7 @@ erDiagram
   - `lang`-attributen bij het wisselen van taal.
 - **Aanraken:** doelen van minimaal 48 px. Knijpen en dubbeltikken zijn een aanvulling op de knoppen, nooit de enige manier.
 - `prefers-reduced-motion` zet animaties uit.
-- **Responsive:** groot liggend digibord (1920×1080), iPad staand en liggend, telefoon.
+- **Responsive:** groot liggend digibord (1920×1080, en 4K met of zonder schaling), iPad staand en liggend, telefoon.
 
 ## 9. Huisstijl
 
