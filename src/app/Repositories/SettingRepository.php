@@ -33,7 +33,7 @@ final class SettingRepository
         'video_url'      => ['label' => 'Adres van het filmbestand', 'type' => 'url', 'group' => 'Film', 'required' => true,
                              'help' => 'Standaard: /media/oudegracht-film-v1.mp4'],
         'video_poster'   => ['label' => 'Stilstaand beeld voordat de film start', 'type' => 'url', 'group' => 'Film'],
-        'idle_timeout'   => ['label' => 'Na hoeveel seconden zonder aanraking terug naar het welkomstscherm', 'type' => 'number', 'group' => 'Digibord',
+        'idle_timeout'   => ['label' => 'Na hoeveel seconden zonder aanraking terug naar de wachtstand', 'type' => 'number', 'group' => 'Digibord',
                              'help' => 'Bijvoorbeeld 180 (= 3 minuten). Vul 0 in om dit uit te zetten.'],
     ];
 

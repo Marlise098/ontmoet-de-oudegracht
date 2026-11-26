@@ -42,6 +42,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  /* Lang vasthouden op het digibord selecteert geen tekst en opent geen menu */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
   display: flex;
   flex-direction: column;
   height: 100dvh;
@@ -291,7 +295,7 @@ svg { fill: currentColor; }
 .ctrl.is-muted .i-muted { display: block; }
 .ctrl-sep { width: 1px; height: 36px; background: rgba(255, 255, 255, .25); margin: 0 .3rem; }
 
-.volume input { width: clamp(80px, 8vw, 150px); accent-color: var(--hua-groenbeige); height: 40px; }
+.volume input { width: clamp(80px, 8vw, 150px); accent-color: var(--hua-groenbeige); height: 48px; }
 
 .clock {
   margin-left: auto;
@@ -328,13 +332,13 @@ svg { fill: currentColor; }
 .timeline-markers { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .marker {
   position: absolute; top: 50%;
-  width: 40px; height: 40px;
+  width: 48px; height: 48px;
   transform: translate(-50%, -50%);
   border: 3px solid var(--wit);
   border-radius: 50%;
   background: var(--hua-groenbeige);
   color: var(--wit);
-  font-weight: 800; font-size: .8rem;
+  font-weight: 800; font-size: .95rem;
   pointer-events: auto;
   box-shadow: 0 1px 4px rgba(0, 0, 0, .25);
   transition: transform .15s ease;
@@ -344,7 +348,7 @@ svg { fill: currentColor; }
   transform: translate(-50%, -50%) scale(1.18);
 }
 
-.film-credit { margin: 0; font-size: .8rem; color: var(--inkt-zacht); }
+.film-credit { margin: 0; font-size: .95rem; color: var(--inkt-zacht); }
 
 /* ---------- Kaart ---------- */
 
@@ -391,7 +395,7 @@ svg { fill: currentColor; }
   padding: .25rem .7rem;
   background: rgba(255, 255, 255, .92);
   border-radius: 999px;
-  font-size: .8rem; color: var(--inkt-zacht);
+  font-size: .95rem; color: var(--inkt-zacht);
   pointer-events: none;
 }
 .map-offline {
@@ -464,7 +468,7 @@ svg { fill: currentColor; }
 }
 .eyebrow {
   margin: 0;
-  font-size: .8rem; font-weight: 700;
+  font-size: .95rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: .08em;
   color: var(--hua-groenbeige);
 }
@@ -652,13 +656,80 @@ svg { fill: currentColor; }
 .modal-maps h2 { margin: 0 4rem .8rem 0; color: var(--hua-paars); font-size: 1.4rem; }
 .maps-frame { aspect-ratio: 16 / 10; max-height: 70dvh; background: var(--rand); border-radius: var(--radius); overflow: hidden; }
 .maps-frame iframe { width: 100%; height: 100%; border: 0; }
-.maps-note { margin: .7rem 0 0; display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; }
-.maps-note a {
-  display: inline-flex; align-items: center; min-height: 48px; padding: 0 1.1rem;
-  border-radius: 999px; background: var(--hua-groen); color: var(--wit); font-weight: 700; text-decoration: none;
+.maps-note { margin: .7rem 0 0; }
+
+/* Keuze tussen satelliet en Street View */
+.maps-views { display: flex; gap: .5rem; margin: 0 0 .8rem; }
+.maps-view {
+  min-height: 52px; padding: 0 1.3rem;
+  border: 2px solid var(--hua-paars);
+  border-radius: 999px;
+  background: var(--wit); color: var(--hua-paars);
+  font-weight: 700;
 }
+.maps-view[aria-pressed="true"] { background: var(--hua-paars); color: var(--wit); }
 
 .noscript { position: fixed; inset: auto 1rem 1rem; padding: 1rem; background: var(--hua-rood); color: var(--wit); }
+
+/* ---------- Wachtstand (digibord in rust) ---------- */
+/* Een onzichtbare knop over het hele scherm: elke tik start de app. Onderin een grote oproep. */
+
+.attract {
+  position: fixed; inset: 0; z-index: 2000;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: 0 1rem clamp(2rem, 7vh, 5rem);
+  border: 0;
+  background: linear-gradient(to top, rgba(11, 26, 64, .6), rgba(11, 26, 64, 0) 40%);
+  cursor: pointer;
+}
+.attract[hidden] { display: none; }
+.attract:focus-visible { outline: none; }
+.attract:focus-visible .attract-call { outline: 4px solid var(--hua-groenbeige); outline-offset: 6px; }
+.attract-call {
+  display: inline-flex; align-items: center; gap: 1.4rem;
+  padding: 1.1rem 2.6rem 1.1rem 1.2rem;
+  border: 4px solid var(--wit);
+  border-radius: 999px;
+  background: var(--hua-paars);
+  color: var(--wit);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+  animation: attract-pulse 2.4s ease-in-out infinite;
+}
+.attract-icon {
+  position: relative; flex: none;
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: var(--hua-groenbeige);
+}
+/* Afspeel-driehoek */
+.attract-icon::before {
+  content: ""; position: absolute; inset: 22px 20px 22px 28px;
+  background: var(--wit);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+/* Kring die steeds uitdijt, als een tik op het water */
+.attract-icon::after {
+  content: ""; position: absolute; inset: -6px;
+  border: 3px solid var(--hua-groenbeige);
+  border-radius: 50%;
+  animation: attract-ring 2.4s ease-out infinite;
+}
+.attract-text { display: flex; flex-direction: column; text-align: left; line-height: 1.15; }
+.attract-nl { font-size: clamp(1.6rem, 2.4vw, 2.6rem); font-weight: 800; font-style: italic; text-transform: uppercase; }
+.attract-en { margin-top: .2rem; font-size: clamp(1.05rem, 1.35vw, 1.45rem); opacity: .85; }
+@keyframes attract-pulse { 50% { transform: scale(1.04); } }
+@keyframes attract-ring { from { transform: scale(.85); opacity: 1; } to { transform: scale(1.7); opacity: 0; } }
+
+/* ---------- Grote schermen (4K-digibord zonder schaling in Windows) ---------- */
+/* Alles evenredig vergroten, zodat het eruitziet als op een Full HD-scherm (1920 px breed). */
+
+/* Schermhoogte-eenheden (dvh) worden ook vergroot, daarom delen we de hoogte door dezelfde factor. */
+:root { --screen-zoom: 1; }
+@media (min-width: 2400px) { :root { --screen-zoom: 1.25; } }
+@media (min-width: 2880px) { :root { --screen-zoom: 1.5; } }
+@media (min-width: 3400px) { :root { --screen-zoom: 2; } }
+html { zoom: var(--screen-zoom); }
+body { height: calc(100dvh / var(--screen-zoom)); }
 
 /* ---------- Kleinere schermen (iPad staand, laptop) ---------- */
 

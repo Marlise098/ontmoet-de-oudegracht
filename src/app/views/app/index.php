@@ -221,12 +221,24 @@ $t = $content['texts'];
 <dialog class="modal modal-maps" id="maps" aria-labelledby="maps-title">
     <button type="button" class="modal-close" data-close data-i18n-label="close" aria-label="Sluiten">×</button>
     <h2 id="maps-title"></h2>
+    <div class="maps-views" role="group" aria-label="Weergave" data-i18n-label="mapsViews">
+        <button type="button" class="maps-view" data-view="satellite" aria-pressed="true" data-i18n="viewSatellite">Van boven</button>
+        <button type="button" class="maps-view" data-view="street" aria-pressed="false" data-i18n="viewStreet">Rondkijken in 3D</button>
+    </div>
     <div class="maps-frame" id="maps-frame"></div>
-    <p class="maps-note">
-        <span data-i18n="mapsNote">Satellietbeeld van Google Maps. Wil je de plek in 3D zien?</span>
-        <a id="maps-3d" target="_blank" rel="noopener" data-i18n="open3d">Open in 3D</a>
-    </p>
+    <p class="maps-note" id="maps-note"></p>
 </dialog>
+
+<!-- Wachtstand: de app laat zichzelf zien (film zonder geluid) tot iemand het scherm aanraakt -->
+<button type="button" class="attract" id="attract" hidden>
+    <span class="attract-call">
+        <span class="attract-icon" aria-hidden="true"></span>
+        <span class="attract-text">
+            <span class="attract-nl">Tik om aan boord te gaan</span>
+            <span class="attract-en" lang="en">Tap to come aboard</span>
+        </span>
+    </span>
+</button>
 
 <noscript><p class="noscript">Zet JavaScript aan om de film en de kaart te gebruiken.</p></noscript>
 

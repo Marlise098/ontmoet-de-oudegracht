@@ -28,8 +28,10 @@
       start: 'Start de boottocht', close: 'Sluiten', aboutHua: 'Over Het Utrechts Archief', aboutApp: 'Over deze applicatie',
       makers: 'Gemaakt door', client: 'Opdrachtgever', film: 'Film', photos: "Foto's", mapData: 'Kaart', contact: 'Contact',
       photosCredit: 'Beeldbank Het Utrechts Archief. Bij elke foto staan de maker en het catalogusnummer.',
-      prevPhoto: 'Vorige foto', nextPhoto: 'Volgende foto', mapsNote: 'Satellietbeeld van Google Maps. Wil je de plek in 3D zien?',
-      open3d: 'Open in 3D', catalog: 'cat.nr.', photoOf: 'Foto {n} van {total}', viewPhoto: 'Bekijk foto: {caption}',
+      prevPhoto: 'Vorige foto', nextPhoto: 'Volgende foto', mapsNote: 'Satellietbeeld van Google Maps.',
+      streetNote: 'Street View van Google Maps. Sleep met je vinger om rond te kijken.',
+      viewSatellite: 'Van boven', viewStreet: 'Rondkijken in 3D', mapsViews: 'Weergave',
+      catalog: 'cat.nr.', photoOf: 'Foto {n} van {total}', viewPhoto: 'Bekijk foto: {caption}',
       goTo: 'Ga naar {code}: {title}', noPhotos: 'Bij deze plek zijn nog geen foto\'s.', boat: 'De boot',
       startTitle: 'Vaar mee over de Oudegracht',
       startText: 'Start de film. Zodra de boot bij een bijzondere plek komt, lees je hier het verhaal en zie je oude foto\'s uit het archief.',
@@ -50,8 +52,10 @@
       start: 'Start the boat trip', close: 'Close', aboutHua: 'About Het Utrechts Archief', aboutApp: 'About this application',
       makers: 'Made by', client: 'Client', film: 'Film', photos: 'Photos', mapData: 'Map', contact: 'Contact',
       photosCredit: 'Image bank of Het Utrechts Archief. Each photo shows its maker and catalogue number.',
-      prevPhoto: 'Previous photo', nextPhoto: 'Next photo', mapsNote: 'Satellite image from Google Maps. Want to see the place in 3D?',
-      open3d: 'Open in 3D', catalog: 'cat. no.', photoOf: 'Photo {n} of {total}', viewPhoto: 'View photo: {caption}',
+      prevPhoto: 'Previous photo', nextPhoto: 'Next photo', mapsNote: 'Satellite image from Google Maps.',
+      streetNote: 'Street View from Google Maps. Drag with your finger to look around.',
+      viewSatellite: 'From above', viewStreet: 'Look around in 3D', mapsViews: 'View',
+      catalog: 'cat. no.', photoOf: 'Photo {n} of {total}', viewPhoto: 'View photo: {caption}',
       goTo: 'Go to {code}: {title}', noPhotos: 'There are no photos for this place yet.', boat: 'The boat',
       startTitle: 'Sail along the Oudegracht',
       startText: 'Start the film. When the boat reaches a special place, you can read its story here and see old photos from the archive.',
@@ -66,7 +70,9 @@
     current: null,       // de plek waar de boot nu is (of null voor de eerste plek)
     lightboxIndex: 0,    // welke foto groot in beeld is
     duration: 0,         // lengte van de film in seconden
-    lastInteraction: Date.now()
+    lastInteraction: Date.now(),
+    attract: false,      // staat de wachtstand aan?
+    restartFilm: false   // na de wachtstand de film vanaf het begin starten
   };
 
   const locations = (DATA.locations || []).slice().sort((a, b) => a.time - b.time);
@@ -544,24 +550,39 @@
   })();
 
   /* ------------------------------------------------------------------
-   *  De plek nu (satellietbeeld van Google Maps en een link naar 3D)
+   *  De plek nu: van boven (satelliet) of rondkijken in 3D (Street View),
+   *  allebei van Google Maps en binnen de app
    * ------------------------------------------------------------------ */
-  $('#btn-maps').addEventListener('click', () => {
+  function showPlaceNow(view) {
     const location = state.current;
     if (!location) return;
     const lat = location.lat.toFixed(6), lng = location.lng.toFixed(6);
-    $('#maps-title').textContent = uiText('nowTitle', { title: translated(location.title) });
+    const street = view === 'street';
+    $$('.maps-view').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.view === view)));
+    $('#maps-note').textContent = uiText(street ? 'streetNote' : 'mapsNote');
+
     const frame = $('#maps-frame');
     frame.textContent = '';
     const iframe = document.createElement('iframe');
     iframe.title = translated(location.title) + ' — Google Maps';
     iframe.loading = 'lazy';
     iframe.referrerPolicy = 'no-referrer-when-downgrade';
-    iframe.src = `https://maps.google.com/maps?q=${lat},${lng}&t=k&z=19&hl=${state.lang}&output=embed`;
+    // Zonder allow-popups en allow-top-navigation kan een tik in Google Maps de app niet verlaten
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    // Street View: cbll = plek, cbp = kijkrichting (zonder cbp toont Google een wereldkaart)
+    iframe.src = street
+      ? `https://maps.google.com/maps?layer=c&cbll=${lat},${lng}&cbp=11,0,0,0,0&hl=${state.lang}&output=svembed`
+      : `https://maps.google.com/maps?q=${lat},${lng}&t=k&z=19&hl=${state.lang}&output=embed`;
     frame.appendChild(iframe);
-    $('#maps-3d').href = `https://www.google.com/maps/@${lat},${lng},90a,35y,0h,65t/data=!3m1!1e3?hl=${state.lang}`;
+  }
+
+  $('#btn-maps').addEventListener('click', () => {
+    if (!state.current) return;
+    $('#maps-title').textContent = uiText('nowTitle', { title: translated(state.current.title) });
+    showPlaceNow('satellite');
     openDialog('maps');
   });
+  $$('.maps-view').forEach((button) => button.addEventListener('click', () => showPlaceNow(button.dataset.view)));
 
   /* ------------------------------------------------------------------
    *  Dialogen (welkom, colofon, foto, kaart)
@@ -597,6 +618,11 @@
 
   function startTour() {
     closeDialog(dialogs.intro);
+    // Na de wachtstand begint de boottocht vanaf het begin van de film
+    if (state.restartFilm) {
+      state.restartFilm = false;
+      seek(0);
+    }
     playVideo();
   }
   $('#intro-start').addEventListener('click', startTour);
@@ -662,7 +688,40 @@
   });
 
   /* ------------------------------------------------------------------
-   *  Digibord: na een tijd zonder aanraking terug naar het begin
+   *  Wachtstand: zolang niemand het scherm aanraakt, laat de app zichzelf zien.
+   *  De film speelt zonder geluid, de boot vaart mee en de plekken wisselen vanzelf.
+   *  Zo is het digibord ook op afstand aantrekkelijk om naar te kijken.
+   * ------------------------------------------------------------------ */
+  const attractButton = $('#attract');
+
+  function startAttract() {
+    state.attract = true;
+    document.body.classList.add('is-attract');
+    attractButton.hidden = false;
+    video.muted = true; // zonder geluid mag de browser de film zelf starten
+    updateMute();
+    setFollow(true);
+    playVideo();
+  }
+
+  /** Eerste aanraking: de film stopt en het welkomstscherm met uitleg en taalkeuze verschijnt. */
+  function stopAttract() {
+    state.attract = false;
+    state.restartFilm = true;
+    document.body.classList.remove('is-attract');
+    attractButton.hidden = true;
+    video.muted = false;
+    updateMute();
+    openDialog('intro');
+  }
+  attractButton.addEventListener('click', stopAttract);
+
+  // Aan het eind van de film in de wachtstand de pagina opnieuw laden,
+  // zodat wijzigingen uit het CMS vanzelf op het digibord komen
+  video.addEventListener('ended', () => { if (state.attract) resetApp(); });
+
+  /* ------------------------------------------------------------------
+   *  Digibord: na een tijd zonder aanraking terug naar de wachtstand
    * ------------------------------------------------------------------ */
   const idleLimitMs = (DATA.idleTimeout || 0) * 1000; // 0 = uit
   ['pointerdown', 'keydown', 'wheel'].forEach((eventName) =>
@@ -672,18 +731,23 @@
     setInterval(() => {
       const idleFor = Date.now() - state.lastInteraction;
       // Tijdens het afspelen kijkt er waarschijnlijk iemand: pas resetten na afloop
-      if (idleFor < idleLimitMs || (!video.paused && !video.ended) || dialogs.intro.open) return;
+      if (state.attract || idleFor < idleLimitMs || (!video.paused && !video.ended)) return;
       resetApp();
     }, 5000);
   }
 
   /**
-   * Terug naar het begin. De pagina wordt opnieuw geladen, zodat wijzigingen
-   * uit het CMS meteen op het digibord staan.
+   * Terug naar het begin (de wachtstand). De pagina wordt opnieuw geladen,
+   * zodat wijzigingen uit het CMS meteen op het digibord staan.
    */
   function resetApp() {
     video.pause();
     window.location.reload();
+  }
+
+  // Op een aanraakscherm opent lang vasthouden geen menu
+  if (navigator.maxTouchPoints > 0) {
+    document.addEventListener('contextmenu', (event) => event.preventDefault());
   }
 
   /* ------------------------------------------------------------------
@@ -694,5 +758,5 @@
   setDuration();
   updateMute();
   updatePlayState();
-  openDialog('intro');
+  startAttract();
 })();
