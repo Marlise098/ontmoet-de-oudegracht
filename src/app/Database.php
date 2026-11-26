@@ -7,7 +7,7 @@ use PDO;
 use PDOStatement;
 
 /**
- * Eén gedeelde PDO-verbinding. Alle queries lopen via prepared statements.
+ * Een gedeelde PDO-verbinding. Alle queries lopen via prepared statements.
  */
 final class Database
 {

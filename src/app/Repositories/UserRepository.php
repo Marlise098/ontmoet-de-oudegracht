@@ -61,6 +61,7 @@ final class UserRepository
         );
     }
 
+    /** Slaat het moment van inloggen op. */
     public static function touchLogin(int $id): void
     {
         Database::run('UPDATE users SET last_login_at = ? WHERE id = ?', [Database::now(), $id]);
@@ -71,7 +72,10 @@ final class UserRepository
         Database::run('DELETE FROM users WHERE id = ?', [$id]);
     }
 
-    /** Wachtwoordregels: minstens 10 tekens, met een letter en een cijfer. */
+    /**
+     * Wachtwoordregels: minstens 10 tekens, met een letter en een cijfer.
+     * Geeft de foutmelding terug, of null als het wachtwoord goed is.
+     */
     public static function passwordProblem(string $password): ?string
     {
         if (mb_strlen($password) < 10) {
@@ -83,20 +87,24 @@ final class UserRepository
         return null;
     }
 
+    /**
+     * Controleert de invoer. Geeft [schone data, foutmeldingen per veld] terug.
+     * $existingId is de gebruiker die bewerkt wordt (null bij een nieuwe gebruiker).
+     */
     public static function validate(array $input, ?int $existingId): array
     {
         $errors = [];
         $data = [
-            'username'     => strtolower(trim((string) ($input['username'] ?? ''))),
-            'display_name' => trim((string) ($input['display_name'] ?? '')),
+            'username'     => strtolower(input_text($input, 'username')),
+            'display_name' => input_text($input, 'display_name'),
             'role'         => (string) ($input['role'] ?? 'editor'),
             'is_active'    => !empty($input['is_active']) ? 1 : 0,
         ];
         if (!preg_match('/^[a-z0-9._-]{3,50}$/', $data['username'])) {
             $errors['username'] = 'Gebruik 3 tot 50 tekens: kleine letters, cijfers, punt, streepje of underscore.';
         } else {
-            $other = self::findByUsername($data['username']);
-            if ($other && (int) $other['id'] !== $existingId) {
+            $sameName = self::findByUsername($data['username']);
+            if ($sameName && (int) $sameName['id'] !== $existingId) {
                 $errors['username'] = 'Deze gebruikersnaam bestaat al.';
             }
         }

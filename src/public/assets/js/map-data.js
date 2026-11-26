@@ -1,6 +1,6 @@
 /**
- * Kaartgegevens van de Oudegracht (Gaardbrug – Bezembrug).
- * Bron: OpenStreetMap-bijdragers (ODbL). Coördinaten als [lengtegraad, breedtegraad].
+ * Kaartgegevens van de Oudegracht, van de Gaardbrug tot de Bezembrug.
+ * Bron: OpenStreetMap-bijdragers (ODbL). Coordinaten als [lengtegraad, breedtegraad].
  * Hiermee vaart het bootje precies over de gracht, en zonder internet tekent
  * OudegrachtMap hieruit een eenvoudige noodkaart.
  */

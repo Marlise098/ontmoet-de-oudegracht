@@ -1,225 +1,244 @@
 /**
- * CMS 'Ontmoet de Oudegracht' — gebruiksgemak voor redacteuren.
- * Alles werkt ook zonder JavaScript (behalve de kaart- en filmhulp).
+ * CMS 'Ontmoet de Oudegracht': extra gebruiksgemak voor redacteuren.
+ * Alles werkt ook zonder JavaScript, behalve de kaart en de hulp bij de film.
  */
 (function () {
   'use strict';
 
-  const $ = (sel, root) => (root || document).querySelector(sel);
-  const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+  const $ = (selector, root) => (root || document).querySelector(selector);
+  const $$ = (selector, root) => Array.from((root || document).querySelectorAll(selector));
 
-  const fmt = (sec) => {
-    sec = Math.max(0, Math.round(sec || 0));
-    return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+  /** Seconden als m:ss, bijvoorbeeld 84 wordt "1:24". */
+  const formatTime = (seconds) => {
+    seconds = Math.max(0, Math.round(seconds || 0));
+    return Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
   };
-  const parse = (text) => {
-    const v = String(text || '').trim().replace(',', '.');
-    let m = v.match(/^(\d{1,3}):([0-5]?\d(?:\.\d+)?)$/);
-    if (m) return parseInt(m[1], 10) * 60 + parseFloat(m[2]);
-    m = v.match(/^\d+(?:\.\d+)?$/);
-    return m ? parseFloat(v) : null;
+
+  /** "1:24" of "84" omzetten naar seconden; null bij ongeldige invoer (zelfde regels als parse_time in PHP). */
+  const parseTime = (text) => {
+    const value = String(text || '').trim().replace(',', '.');
+    const minutesSeconds = value.match(/^(\d{1,3}):([0-5]?\d(?:\.\d+)?)$/);
+    if (minutesSeconds) return parseInt(minutesSeconds[1], 10) * 60 + parseFloat(minutesSeconds[2]);
+    return /^\d+(?:\.\d+)?$/.test(value) ? parseFloat(value) : null;
   };
+
+  /** Laat het formulier weten dat er iets is gewijzigd (voor de waarschuwing bij weggaan). */
+  const markDirty = (form) => form.dispatchEvent(new Event('og-dirty'));
 
   /* ---------- Bevestigen voor verwijderen ---------- */
   $$('form[data-confirm]').forEach((form) => {
-    form.addEventListener('submit', (e) => {
-      if (!window.confirm(form.dataset.confirm)) e.preventDefault();
+    form.addEventListener('submit', (event) => {
+      if (!window.confirm(form.dataset.confirm)) event.preventDefault();
     });
   });
 
   /* ---------- Foutoverzicht in beeld brengen ---------- */
-  const summary = $('[data-focus]');
-  if (summary) {
-    summary.scrollIntoView({ block: 'start' });
-    summary.focus();
+  const errorSummary = $('[data-focus]');
+  if (errorSummary) {
+    errorSummary.scrollIntoView({ block: 'start' });
+    errorSummary.focus();
   }
 
   /* ---------- Waarschuwen bij niet-opgeslagen wijzigingen ---------- */
   $$('#location-form, #settings-form, #route-form').forEach((form) => {
-    let dirty = false;
+    let hasChanges = false;
     const note = $('#dirty-note');
-    const mark = () => { dirty = true; if (note) note.hidden = false; };
-    form.addEventListener('input', mark);
-    form.addEventListener('change', mark);
-    form.addEventListener('og-dirty', mark);
-    form.addEventListener('submit', () => { dirty = false; });
-    window.addEventListener('beforeunload', (e) => {
-      if (dirty) { e.preventDefault(); e.returnValue = ''; }
+    const onChange = () => { hasChanges = true; if (note) note.hidden = false; };
+    form.addEventListener('input', onChange);
+    form.addEventListener('change', onChange);
+    form.addEventListener('og-dirty', onChange);
+    form.addEventListener('submit', () => { hasChanges = false; });
+    window.addEventListener('beforeunload', (event) => {
+      if (hasChanges) { event.preventDefault(); event.returnValue = ''; }
     });
   });
 
-  /* ---------- Tekentellers bij lange teksten ---------- */
-  $$('textarea[data-counter]').forEach((ta) => {
-    const out = document.createElement('p');
-    out.className = 'hint counter';
-    out.setAttribute('aria-live', 'polite');
-    ta.after(out);
+  /* ---------- Woordenteller bij lange teksten ---------- */
+  const LONG_TEXT_WORDS = 130; // langer is lastig te lezen op een digibord
+  $$('textarea[data-counter]').forEach((textarea) => {
+    const counter = document.createElement('p');
+    counter.className = 'hint counter';
+    counter.setAttribute('aria-live', 'polite');
+    textarea.after(counter);
     const update = () => {
-      const words = ta.value.trim() ? ta.value.trim().split(/\s+/).length : 0;
-      out.textContent = words + ' woorden' + (words > 130 ? ' — lang voor een digibord, kan het korter?' : '');
-      out.classList.toggle('counter-warn', words > 130);
+      const text = textarea.value.trim();
+      const words = text ? text.split(/\s+/).length : 0;
+      const tooLong = words > LONG_TEXT_WORDS;
+      counter.textContent = words + ' woorden' + (tooLong ? ' — lang voor een digibord, kan het korter?' : '');
+      counter.classList.toggle('counter-warn', tooLong);
     };
-    ta.addEventListener('input', update);
+    textarea.addEventListener('input', update);
     update();
   });
 
-  /* ---------- Voorbeeld van gekozen foto ---------- */
-  const upload = $('#upload');
+  /* ---------- Voorbeeld van de gekozen foto ---------- */
+  const MAX_UPLOAD_BYTES = 8 * 1024 * 1024; // gelijk aan uploads.max_bytes in config.php
+  const uploadField = $('#upload');
   const urlField = $('#image_url');
   const preview = $('#image-preview');
   if (preview) {
-    const img = $('img', preview);
-    const show = (src) => { if (src) { img.src = src; preview.hidden = false; } else { preview.hidden = true; } };
-    if (upload) upload.addEventListener('change', () => {
-      const f = upload.files && upload.files[0];
-      if (f && f.size > 8 * 1024 * 1024) {
+    const previewImg = $('img', preview);
+    const showPreview = (src) => {
+      if (src) { previewImg.src = src; preview.hidden = false; } else { preview.hidden = true; }
+    };
+    if (uploadField) uploadField.addEventListener('change', () => {
+      const file = uploadField.files && uploadField.files[0];
+      if (file && file.size > MAX_UPLOAD_BYTES) {
         alert('Deze foto is groter dan 8 MB. Kies een kleinere foto.');
-        upload.value = '';
-        show('');
+        uploadField.value = '';
+        showPreview('');
         return;
       }
-      show(f ? URL.createObjectURL(f) : '');
+      showPreview(file ? URL.createObjectURL(file) : '');
     });
     if (urlField) {
-      urlField.addEventListener('change', () => show(/^https?:\/\//.test(urlField.value) ? urlField.value : ''));
-      if (urlField.value) show(urlField.value.startsWith('uploads/') ? '../' + urlField.value : urlField.value);
+      urlField.addEventListener('change', () => showPreview(/^https?:\/\//.test(urlField.value) ? urlField.value : ''));
+      // Geuploade foto's staan in uploads/, gezien vanaf /cms/ is dat ../uploads/
+      if (urlField.value) showPreview(urlField.value.startsWith('uploads/') ? '../' + urlField.value : urlField.value);
     }
-    img.addEventListener('error', () => { preview.hidden = true; });
+    previewImg.addEventListener('error', () => { preview.hidden = true; });
   }
 
-  /* ---------- Kaarthulp ---------- */
+  /* ---------- Kaart met knoppen (plek kiezen en route) ---------- */
   function makeMap(container, onPick) {
     const map = new window.OudegrachtMap($('.map-picker-map', container), { data: window.OUDEGRACHT_MAP, onPick });
-    $$('[data-map]', container).forEach((b) => b.addEventListener('click', () => {
-      const a = b.dataset.map;
-      if (a === 'in') map.zoomIn();
-      else if (a === 'out') map.zoomOut();
-      else if (a === 'base') {
-        const on = map.setBase(map.base === 'luchtfoto' ? 'kaart' : 'luchtfoto') === 'luchtfoto';
-        b.setAttribute('aria-pressed', String(on));
+    $$('[data-map]', container).forEach((button) => button.addEventListener('click', () => {
+      const action = button.dataset.map;
+      if (action === 'in') map.zoomIn();
+      else if (action === 'out') map.zoomOut();
+      else if (action === 'base') {
+        const aerial = map.setBase(map.base === 'luchtfoto' ? 'kaart' : 'luchtfoto') === 'luchtfoto';
+        button.setAttribute('aria-pressed', String(aerial));
       } else map.reset();
     }));
     return map;
   }
 
-  /* ---------- Film: tijd overnemen ---------- */
+  /** Coordinaten leesbaar tonen, met 5 decimalen (ongeveer 1 meter). */
+  const formatPosition = (lat, lng) => parseFloat(lat).toFixed(5) + ', ' + parseFloat(lng).toFixed(5);
+
+  /* ---------- Film: moment overnemen in het formulier ---------- */
   const video = $('#picker-video');
   const timeField = $('#start_time');
   if (video && timeField) {
     $('#use-video-time').addEventListener('click', () => {
       video.pause();
-      timeField.value = fmt(video.currentTime);
+      timeField.value = formatTime(video.currentTime);
       timeField.dispatchEvent(new Event('input', { bubbles: true }));
       timeField.focus();
     });
     $('#goto-video-time').addEventListener('click', () => {
-      const t = parse(timeField.value);
-      if (t == null) { alert('Vul eerst een tijd in, zoals 1:24.'); timeField.focus(); return; }
-      video.currentTime = t;
+      const time = parseTime(timeField.value);
+      if (time == null) { alert('Vul eerst een tijd in, zoals 1:24.'); timeField.focus(); return; }
+      video.currentTime = time;
       video.play().catch(() => {});
     });
   }
 
-  /* ---------- Locatie: plek kiezen op de kaart ---------- */
+  /* ---------- Plek bewerken: de plek kiezen op de kaart ---------- */
   const picker = $('#map-picker');
   if (picker) {
-    const lat = $('#lat'), lng = $('#lng'), text = $('#position-text');
-    const describe = () => {
-      text.textContent = lat.value && lng.value
-        ? 'Gekozen plek: ' + parseFloat(lat.value).toFixed(5) + ', ' + parseFloat(lng.value).toFixed(5)
+    const latField = $('#lat'), lngField = $('#lng'), positionText = $('#position-text');
+    const describePosition = () => {
+      positionText.textContent = latField.value && lngField.value
+        ? 'Gekozen plek: ' + formatPosition(latField.value, lngField.value)
         : 'Nog geen plek gekozen — tik op de kaart.';
     };
-    const map = makeMap(picker, (la, ln) => {
-      lat.value = la; lng.value = ln;
-      map.setMarker(la, ln);
-      describe();
-      picker.closest('form').dispatchEvent(new Event('og-dirty'));
+    const map = makeMap(picker, (lat, lng) => {
+      latField.value = lat;
+      lngField.value = lng;
+      map.setMarker(lat, lng);
+      describePosition();
+      markDirty(picker.closest('form'));
     });
-    const others = JSON.parse(picker.dataset.others || '[]');
+    // De andere plekken en de route staan grijs op de kaart, als houvast
+    const otherLocations = JSON.parse(picker.dataset.others || '[]');
     const route = JSON.parse(picker.dataset.route || '[]');
     map.setRoute(route, { boat: false });
-    map.setLocations(others.map((o) => Object.assign({ label: o.code }, o)), { muted: true });
+    map.setLocations(otherLocations.map((other) => Object.assign({ label: other.code }, other)), { muted: true });
     map.autoFit(route.length ? route : null);
-    if (lat.value && lng.value) {
-      map.setMarker(parseFloat(lat.value), parseFloat(lng.value));
+    if (latField.value && lngField.value) {
+      map.setMarker(parseFloat(latField.value), parseFloat(lngField.value));
     }
-    describe();
+    describePosition();
   }
 
-  /* ---------- Route-editor ---------- */
+  /* ---------- Route van de boot: tabel met routepunten en de kaart ---------- */
   const routeMap = $('#route-map');
   if (routeMap) {
-    const tbody = $('#route-table tbody');
+    const tableBody = $('#route-table tbody');
     const form = $('#route-form');
-    let picking = null; // rij die op een plek wacht
+    let pickingRow = null; // de rij die wacht op een tik op de kaart
 
-    const rows = () => $$('tr', tbody);
-    const points = () => rows().map((tr) => ({
-      lat: parseFloat($('input[name="lat[]"]', tr).value),
-      lng: parseFloat($('input[name="lng[]"]', tr).value),
-      active: tr === picking
-    })).filter((p) => !isNaN(p.lat) && !isNaN(p.lng));
+    const rows = () => $$('tr', tableBody);
+    const field = (row, name) => $(`input[name="${name}[]"]`, row);
+    const points = () => rows().map((row) => ({
+      lat: parseFloat(field(row, 'lat').value),
+      lng: parseFloat(field(row, 'lng').value),
+      active: row === pickingRow
+    })).filter((point) => !isNaN(point.lat) && !isNaN(point.lng));
 
-    const map = makeMap(routeMap, (la, ln) => {
-      const tr = picking || rows()[rows().length - 1];
-      if (!tr) return;
-      $('input[name="lat[]"]', tr).value = la;
-      $('input[name="lng[]"]', tr).value = ln;
-      setPicking(null);
+    // Tik op de kaart: plek invullen in de rij die wacht (of anders de laatste rij)
+    const map = makeMap(routeMap, (lat, lng) => {
+      const row = pickingRow || rows()[rows().length - 1];
+      if (!row) return;
+      field(row, 'lat').value = lat;
+      field(row, 'lng').value = lng;
+      setPickingRow(null);
       refresh();
-      form.dispatchEvent(new Event('og-dirty'));
+      markDirty(form);
     });
-    const locs = JSON.parse(routeMap.dataset.locations || '[]');
-    map.setLocations(locs.map((o) => Object.assign({ label: o.code }, o)), { muted: true });
+    const locations = JSON.parse(routeMap.dataset.locations || '[]');
+    map.setLocations(locations.map((location) => Object.assign({ label: location.code }, location)), { muted: true });
 
-    function setPicking(tr) {
-      picking = tr;
-      rows().forEach((r) => r.classList.toggle('is-picking', r === tr));
-      routeMap.classList.toggle('is-picking', !!tr);
-      if (tr) $('[data-pick]', tr).textContent = 'Tik nu op de kaart…';
+    function setPickingRow(row) {
+      pickingRow = row;
+      rows().forEach((other) => other.classList.toggle('is-picking', other === row));
+      routeMap.classList.toggle('is-picking', !!row);
+      if (row) $('[data-pick]', row).textContent = 'Tik nu op de kaart…';
       refresh();
     }
 
+    /** Nummers, coordinaten en knopteksten in de tabel bijwerken, en de punten op de kaart. */
     function refresh() {
-      rows().forEach((tr, i) => {
-        $('.code-badge', tr).textContent = String(i + 1);
-        const la = $('input[name="lat[]"]', tr).value, ln = $('input[name="lng[]"]', tr).value;
-        $('[data-coords]', tr).textContent = la && ln ? parseFloat(la).toFixed(5) + ', ' + parseFloat(ln).toFixed(5) : 'nog geen plek';
-        $('input[name="time[]"]', tr).setAttribute('aria-label', 'Tijd van punt ' + (i + 1));
-        if (tr !== picking) $('[data-pick]', tr).textContent = 'Kies op kaart';
+      rows().forEach((row, index) => {
+        $('.code-badge', row).textContent = String(index + 1);
+        const lat = field(row, 'lat').value, lng = field(row, 'lng').value;
+        $('[data-coords]', row).textContent = lat && lng ? formatPosition(lat, lng) : 'nog geen plek';
+        field(row, 'time').setAttribute('aria-label', 'Tijd van punt ' + (index + 1));
+        if (row !== pickingRow) $('[data-pick]', row).textContent = 'Kies op kaart';
       });
       map.setPoints(points());
     }
 
-    function bindRow(tr) {
-      $('[data-pick]', tr).addEventListener('click', () => setPicking(picking === tr ? null : tr));
-      $('[data-remove]', tr).addEventListener('click', () => {
-        if (picking === tr) picking = null;
-        tr.remove();
+    function bindRow(row) {
+      $('[data-pick]', row).addEventListener('click', () => setPickingRow(pickingRow === row ? null : row));
+      $('[data-remove]', row).addEventListener('click', () => {
+        if (pickingRow === row) pickingRow = null;
+        row.remove();
         refresh();
-        form.dispatchEvent(new Event('og-dirty'));
+        markDirty(form);
       });
-      $('input[name="time[]"]', tr).addEventListener('focus', () => {
-        const t = parse($('input[name="time[]"]', tr).value);
-        const v = $('#picker-video');
-        if (t != null && v) v.currentTime = t;
+      // Klik in een tijdveld: de film springt naar dat moment
+      field(row, 'time').addEventListener('focus', () => {
+        const time = parseTime(field(row, 'time').value);
+        if (time != null && video) video.currentTime = time;
       });
     }
     rows().forEach(bindRow);
 
     $('#route-add').addEventListener('click', () => {
-      const v = $('#picker-video');
-      v.pause();
-      const tpl = $('#route-row').content.firstElementChild.cloneNode(true);
-      $('input[name="time[]"]', tpl).value = fmt(v.currentTime);
-      // op de juiste plek in de tijdvolgorde invoegen
-      const t = v.currentTime;
-      const after = rows().find((tr) => (parse($('input[name="time[]"]', tr).value) || 0) > t);
-      tbody.insertBefore(tpl, after || null);
-      bindRow(tpl);
-      setPicking(tpl);
-      form.dispatchEvent(new Event('og-dirty'));
-      tpl.scrollIntoView({ block: 'nearest' });
+      video.pause();
+      const newRow = $('#route-row').content.firstElementChild.cloneNode(true);
+      field(newRow, 'time').value = formatTime(video.currentTime);
+      // Op de juiste plek in de tijdvolgorde invoegen
+      const now = video.currentTime;
+      const nextRow = rows().find((row) => (parseTime(field(row, 'time').value) || 0) > now);
+      tableBody.insertBefore(newRow, nextRow || null);
+      bindRow(newRow);
+      setPickingRow(newRow);
+      markDirty(form);
+      newRow.scrollIntoView({ block: 'nearest' });
     });
 
     map.autoFit(points().length ? points() : null);
