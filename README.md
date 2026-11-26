@@ -41,6 +41,12 @@ Medewerkers beheren alle inhoud zelf via een eenvoudig CMS.
 
 ## Starten met Docker
 
+**Snelste manier (Windows):** start Docker Desktop en dubbelklik op **`start.bat`**.
+Het script haalt de nieuwste versie op, start de website en opent hem in je browser.
+Met `stop.bat` stop je de website. Met `reset-database.bat` zet je de database terug naar de startinhoud.
+
+Of via de terminal:
+
 ```bash
 docker compose up --build
 ```
