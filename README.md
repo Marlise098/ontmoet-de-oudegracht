@@ -12,7 +12,7 @@ Medewerkers beheren alle inhoud zelf via een eenvoudig CMS.
 
 - De film uit 1929, met grote knoppen voor afspelen, pauzeren, 10 seconden terug of vooruit, vorige en volgende plek, en geluid aan/uit met volume.
 - Een tijdlijn met genummerde **hotspots**. Tik erop om naar die plek te springen.
-- Een interactieve **kaart van de Oudegracht** waarop het bootje live met de film meevaart. Je kunt in- en uitzoomen met knoppen, knijpen of scrollen, en de kaart verschuiven. De **minimap** laat zien welk stuk je bekijkt, en met **Volg de boot** blijft het bootje in beeld.
+- Een **echte kaart van Utrecht** (PDOK, de kaartdienst van de overheid) waarop het bootje live met de film meevaart. Met één knop wissel je naar de **luchtfoto**. Je kunt in- en uitzoomen met knoppen, knijpen of scrollen, en de kaart verschuiven. De **minimap** laat zien welk stuk je bekijkt, en met **Volg de boot** blijft het bootje in beeld.
 - Bij elke plek een tekst en **foto's uit het archief**. Tik op een foto om hem groot te bekijken en in te zoomen. Bij elke foto staan de maker, het catalogusnummer en de licentie.
 - In beeld verschijnt **"Je vaart nu langs …"** zodra de boot bij een plek komt.
 - **Zo ziet het er nu uit**: een satellietbeeld van Google Maps van die plek, met een link naar de 3D-weergave.
@@ -114,12 +114,14 @@ Zie [docs/testrapport.md](docs/testrapport.md).
 ## Gebruikte technieken
 
 PHP 8.2 zonder framework, MariaDB, HTML5 en CSS3 (grid, flexbox en custom properties), en vanilla JavaScript (ES2020).
-De kaart is een eigen SVG-component op basis van OpenStreetMap-gegevens. Daardoor werkt hij zonder externe bibliotheken en ook zonder internet.
+De kaart is een echte kaart van Utrecht: Leaflet (lokaal meegeleverd) met de BRT Achtergrondkaart en de luchtfoto van PDOK, de kaartdienst van de overheid. Zonder internet tekent de app zelf een eenvoudige noodkaart, zodat de boot, de route en de plekken blijven werken.
 Meer hierover staat in het [technisch ontwerp](docs/technisch-ontwerp.md).
 
 ## Bronnen
 
 - Film en foto's: collectie en beeldbank van Het Utrechts Archief
 - Teksten: 'Bronmateriaal en info' van Het Utrechts Archief (Ellen Blom)
-- Kaartgegevens: © OpenStreetMap-bijdragers (ODbL)
+- Kaart en luchtfoto: PDOK / Kadaster en Beeldmateriaal Nederland (CC BY 4.0)
+- Loop van de gracht: © OpenStreetMap-bijdragers (ODbL)
+- Kaartbibliotheek: Leaflet (BSD-2)
 - Huisstijl: Huisstijlmanual Het Utrechts Archief

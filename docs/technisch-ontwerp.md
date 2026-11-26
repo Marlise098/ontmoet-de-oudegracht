@@ -14,7 +14,7 @@ Medewerkers van HUA moeten de inhoud zonder technische kennis kunnen beheren via
 | Eis / wens | Oplossing |
 |---|---|
 | Video in beeld, aangevuld met informatie en bronnen uit het archief | De film staat groot in beeld. Ernaast staat een informatiekaart met tekst en archieffoto's van de plek waar de boot op dat moment vaart. |
-| Interactieve kaart die live met de video meeloopt | Een SVG-kaart van de Oudegracht. Het bootje beweegt vloeiend over de gracht op basis van routepunten (tijd → plek). |
+| Interactieve kaart die live met de video meeloopt | Een echte kaart van Utrecht (Leaflet + PDOK, met luchtfoto). Het bootje beweegt vloeiend over de gracht op basis van routepunten (tijd → plek). |
 | Info bij punten op basis van waar je vaart | Elke plek heeft een starttijd. Zodra de film die tijd bereikt, worden de tekst, de foto's en de hotspot *Je vaart nu langs* getoond. |
 | Op punten op de kaart klikken → film spoelt naar die plek | Tik op een genummerde hotspot op de kaart of in de tijdlijn. De film spoelt dan vooruit of achteruit naar die plek. |
 | Optie om Google Maps in 3D toe te passen | De knop *Zo ziet het er nu uit* toont een satellietbeeld van Google Maps met een link naar de 3D-weergave. |
@@ -31,7 +31,7 @@ Medewerkers van HUA moeten de inhoud zonder technische kennis kunnen beheren via
 flowchart LR
     subgraph Browser
         A[Bezoekers-app<br>HTML + CSS + JS] -->|tik op hotspot| V[video]
-        A --> K[OudegrachtMap<br>SVG-kaart]
+        A --> K[OudegrachtMap<br>Leaflet + PDOK]
         C[CMS<br>HTML-formulieren + JS-hulp]
     end
     subgraph Server [Apache + PHP 8.2]
@@ -61,14 +61,13 @@ We kozen voor **PHP zonder framework met een duidelijke laagindeling**:
 
 **Waarom geen framework?** De applicatie is klein. Zonder framework blijft de code goed leesbaar voor het team en voor de beoordelaars, en is hij eenvoudig te draaien in de bestaande Docker-opzet. De opbouw (front controller, repositories, services, views) volgt wel dezelfde principes als een MVC-framework.
 
-**Waarom geen Leaflet of Google Maps-API voor de kaart?** De bezoekers-app moet betrouwbaar draaien op een digibord in een tentoonstelling. Onze eigen SVG-kaart:
+**Waarom Leaflet met PDOK voor de kaart?** Bezoekers moeten de plekken uit de film herkennen op een echte kaart van Utrecht, met de straten en gebouwen van nu. Daarom gebruiken we:
 
-- werkt zonder internet en zonder API-sleutel;
-- laadt direct;
-- is volledig in de HUA-huisstijl te maken;
-- kan het bootje precies over de lijn van de gracht laten varen.
+- **Leaflet 1.9.4** (open source, BSD-2). Het staat lokaal in `assets/vendor/leaflet/`, dus er is geen CDN nodig. Het ondersteunt aanraken, knijpen en het toetsenbord.
+- **PDOK**, de kaartdienst van de Nederlandse overheid. Als ondergrond gebruiken we de BRT Achtergrondkaart in de stijl *grijs*, zodat het paars en goud van de huisstijl goed opvallen. Met één knop wissel je naar de actuele **luchtfoto**. PDOK is gratis, heeft geen API-sleutel nodig en past bij een overheidsinstelling. Er zijn geen trackingcookies, zoals bij Google Maps wel het geval is.
+- **Een noodkaart voor als er geen internet is.** Als de kaarttegels niet laden, tekent `OudegrachtMap` zelf de gracht, de straten, de bruggen en de namen uit `assets/js/map-data.js` (OpenStreetMap, ODbL). De route, de boot en de hotspots blijven gewoon werken, en de app laat een melding zien.
 
-De geometrie komt uit OpenStreetMap (ODbL) en staat in `assets/js/map-data.js`.
+Het bootje vaart nog steeds precies over de lijn van de gracht uit `map-data.js`. Leaflet zorgt alleen voor de ondergrond, het zoomen en het verschuiven.
 
 ## 3. Datamodel
 
@@ -138,7 +137,7 @@ erDiagram
    - **Huidige plek:** de laatste plek waarvan `start_time ≤ huidige tijd`. Bij een nieuwe plek worden de informatiekaart, de hotspot in beeld, de tijdlijn en de kaart bijgewerkt.
    - **Bootje:** `OudegrachtMap.setTime()` interpoleert tussen twee routepunten. Dat gebeurt langs de *lijn van de gracht* (afstand langs de gracht), niet in een rechte lijn, zodat het bootje altijd op het water blijft. Tijdens het afspelen gebeurt dit elke frame (`requestAnimationFrame`) voor een vloeiende beweging.
 3. Tik op een hotspot → `video.currentTime = plek.start_time` → dezelfde update als bij stap 2.
-4. **Zoom en pan:** de kaart past de `viewBox` van de SVG aan. Dat is scherp op elk zoomniveau en hardwareversneld. De foto-viewer gebruikt CSS `transform: translate() scale()`. Beide ondersteunen knoppen, knijpen met twee vingers (Pointer Events), het muiswiel en dubbeltikken.
+4. **Zoom en pan:** de kaart (Leaflet) ondersteunt knoppen, knijpen met twee vingers, slepen, het muiswiel, dubbeltikken en het toetsenbord (pijltjes, + en −). Tik je op een hotspot, dan zoomt de kaart in op die plek en volgt hij de boot. Als iemand de kaart verschuift, gaat *Volg de boot* automatisch uit. De foto-viewer gebruikt CSS `transform: translate() scale()`.
 5. **Reset op het digibord:** als niemand het bord aanraakt en de film niet speelt, laadt de pagina na `idle_timeout` seconden opnieuw. Wijzigingen uit het CMS staan daardoor automatisch op het bord, zonder dat iemand iets hoeft te doen.
 
 ## 5. CMS-ontwerp (gebruiksvriendelijkheid)
@@ -176,7 +175,7 @@ erDiagram
 - De film wordt gestreamd met HTTP range requests, zodat doorspoelen direct werkt.
 - Foto's worden lazy geladen. Geüploade foto's worden verkleind tot maximaal 1600 px (GD).
 - Assets krijgen een versienummer (`?v=filemtime`), zodat het digibord na een update nooit een oude versie uit de cache toont.
-- De kaart is SVG: scherp op elk formaat, en zoomen gebeurt zonder opnieuw te tekenen.
+- De kaart laadt alleen de tegels die in beeld zijn (`keepBuffer` voor soepel schuiven) en maakt vooraf verbinding met PDOK (`preconnect`). Het bootje en de gevaren route worden elke frame bijgewerkt zonder de kaart opnieuw te tekenen.
 
 ## 8. Toegankelijkheid (WCAG 2.1 AA als richtlijn)
 

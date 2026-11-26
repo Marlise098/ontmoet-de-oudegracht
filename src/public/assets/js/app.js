@@ -31,7 +31,9 @@
       goTo: 'Ga naar {code}: {title}', noPhotos: 'Bij deze plek zijn nog geen foto\'s.', boat: 'De boot',
       startTitle: 'Vaar mee over de Oudegracht',
       startText: 'Start de film. Zodra de boot bij een bijzondere plek komt, lees je hier het verhaal en zie je oude foto\'s uit het archief.',
-      nowTitle: 'De plek nu: {title}'
+      nowTitle: 'De plek nu: {title}',
+      aerial: 'Luchtfoto', mapOffline: 'Geen internet: je ziet een eenvoudige kaart.',
+      mapCredit: 'Achtergrondkaart en luchtfoto van PDOK (Kadaster en Beeldmateriaal Nederland, CC BY 4.0). Loop van de gracht: © OpenStreetMap-bijdragers.'
     },
     en: {
       help: 'Help', colofon: 'Credits', filmHeading: 'Film of the Oudegracht from 1929',
@@ -51,7 +53,9 @@
       goTo: 'Go to {code}: {title}', noPhotos: 'There are no photos for this place yet.', boat: 'The boat',
       startTitle: 'Sail along the Oudegracht',
       startText: 'Start the film. When the boat reaches a special place, you can read its story here and see old photos from the archive.',
-      nowTitle: 'The place today: {title}'
+      nowTitle: 'The place today: {title}',
+      aerial: 'Aerial photo', mapOffline: 'No internet: showing a simple map.',
+      mapCredit: 'Base map and aerial photo from PDOK (Kadaster and Beeldmateriaal Nederland, CC BY 4.0). Course of the canal: © OpenStreetMap contributors.'
     }
   };
 
@@ -106,40 +110,46 @@
   /* ------------------------------------------------------------------
    *  Kaart
    * ------------------------------------------------------------------ */
-  const mapSvg = $('#map');
+  const mapEl = $('#map');
   const followBtn = $('#map-follow');
-  const map = new window.OudegrachtMap(mapSvg, {
+  const baseBtn = $('#map-base');
+  const map = new window.OudegrachtMap(mapEl, {
     data: window.OUDEGRACHT_MAP,
-    minimap: $('#minimap-svg'),
+    minimap: $('#minimap-map'),
     minimapWrap: $('#minimap'),
     labels: { boat: t('boat') },
-    onHotspot: (loc) => goToLocation(loc)
+    onHotspot: (loc) => { goToLocation(loc); setFollow(true, loc); }
   });
   map.follow = true;
   map.setRoute(DATA.route || []);
-  // Startweergave: de hele route met alle plekken in beeld, passend in het kader
+  map.setLocations(locations.map(l => Object.assign({}, l, { label: l.code + ' ' + tr(l.title) })));
+  // 'Hele kaart': de hele route met alle plekken in beeld, passend in het kader
   map.autoFit((DATA.route || []).concat(locations));
   /** Startweergave: ingezoomd op de boot, die gevolgd wordt. */
   function homeMap() {
-    map.reset();
-    if (map.boatXY) map.zoomAt(2, map.boatXY.x, map.boatXY.y);
+    map.reset(false);
+    map.focusBoat();
   }
   homeMap();
-  map.setLocations(locations.map(l => Object.assign({}, l, { label: l.code + ' ' + tr(l.title) })));
 
-  mapSvg.addEventListener('og-follow', (e) => setFollow(e.detail));
-  function setFollow(on) {
+  mapEl.addEventListener('og-follow', (e) => setFollow(e.detail));
+  mapEl.addEventListener('og-offline', (e) => { $('#map-offline').hidden = !e.detail; });
+  /** Boot volgen aan/uit. Met `at` zoomt de kaart in op die plek (bijv. een aangetikte hotspot). */
+  function setFollow(on, at) {
     map.follow = on;
     followBtn.setAttribute('aria-pressed', String(on));
-    if (on && map.boatXY && map.zoomLevel() > 1.05) map.centerOn(map.boatXY.x, map.boatXY.y);
+    if (on && at) map.focusOn(at.lat, at.lng);
+    else if (on) map.focusBoat();
   }
-  followBtn.addEventListener('click', () => {
-    setFollow(!map.follow);
-    if (map.follow && map.zoomLevel() <= 1.05 && map.boatXY) map.zoomAt(2.2, map.boatXY.x, map.boatXY.y);
-  });
+  followBtn.addEventListener('click', () => setFollow(!map.follow));
   $('#map-zoom-in').addEventListener('click', () => map.zoomIn());
   $('#map-zoom-out').addEventListener('click', () => map.zoomOut());
-  $('#map-reset').addEventListener('click', () => map.reset());
+  $('#map-reset').addEventListener('click', () => { setFollow(false); map.reset(); });
+  function setBase(name) {
+    map.setBase(name);
+    baseBtn.setAttribute('aria-pressed', String(name === 'luchtfoto'));
+  }
+  baseBtn.addEventListener('click', () => setBase(map.base === 'luchtfoto' ? 'kaart' : 'luchtfoto'));
 
   /* Toegankelijke lijst van plekken (voor schermlezers en toetsenbord) */
   function renderStopList() {

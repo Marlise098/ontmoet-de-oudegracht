@@ -89,11 +89,15 @@
 
   /* ---------- Kaarthulp ---------- */
   function makeMap(container, onPick) {
-    const svg = $('svg', container);
-    const map = new window.OudegrachtMap(svg, { data: window.OUDEGRACHT_MAP, onPick, maxZoom: 8 });
+    const map = new window.OudegrachtMap($('.map-picker-map', container), { data: window.OUDEGRACHT_MAP, onPick });
     $$('[data-map]', container).forEach((b) => b.addEventListener('click', () => {
       const a = b.dataset.map;
-      if (a === 'in') map.zoomIn(); else if (a === 'out') map.zoomOut(); else map.reset();
+      if (a === 'in') map.zoomIn();
+      else if (a === 'out') map.zoomOut();
+      else if (a === 'base') {
+        const on = map.setBase(map.base === 'luchtfoto' ? 'kaart' : 'luchtfoto') === 'luchtfoto';
+        b.setAttribute('aria-pressed', String(on));
+      } else map.reset();
     }));
     return map;
   }
@@ -133,17 +137,14 @@
     });
     const others = JSON.parse(picker.dataset.others || '[]');
     const route = JSON.parse(picker.dataset.route || '[]');
-    map.setRoute(route);
-    if (map.boat) map.boat.style.display = 'none';
-    map.setLocations(others.map((o) => Object.assign({ label: o.code }, o)));
-    $$('.og-pin', svg(picker)).forEach((p) => p.classList.add('is-visited'));
+    map.setRoute(route, { boat: false });
+    map.setLocations(others.map((o) => Object.assign({ label: o.code }, o)), { muted: true });
     map.autoFit(route.length ? route : null);
     if (lat.value && lng.value) {
       map.setMarker(parseFloat(lat.value), parseFloat(lng.value));
     }
     describe();
   }
-  function svg(container) { return $('svg', container); }
 
   /* ---------- Route-editor ---------- */
   const routeMap = $('#route-map');
@@ -169,8 +170,7 @@
       form.dispatchEvent(new Event('og-dirty'));
     });
     const locs = JSON.parse(routeMap.dataset.locations || '[]');
-    map.setLocations(locs.map((o) => Object.assign({ label: o.code }, o)));
-    $$('.og-pin', svg(routeMap)).forEach((p) => p.classList.add('is-visited'));
+    map.setLocations(locs.map((o) => Object.assign({ label: o.code }, o)), { muted: true });
 
     function setPicking(tr) {
       picking = tr;
