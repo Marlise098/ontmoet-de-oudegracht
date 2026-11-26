@@ -37,11 +37,12 @@ $mapLocations = array_map(static fn ($l) => ['id' => (int) $l['id'], 'code' => $
         </div>
         <div class="map-picker map-picker-tall" id="route-map"
              data-locations="<?= e(json_encode($mapLocations)) ?>">
-            <svg class="map-picker-svg" role="img" aria-label="Kaart met de routepunten van de boot"></svg>
+            <div class="map-picker-map" role="region" aria-label="Kaart met de routepunten van de boot"></div>
             <div class="map-picker-tools">
                 <button type="button" class="btn btn-small" data-map="in" aria-label="Inzoomen">+</button>
                 <button type="button" class="btn btn-small" data-map="out" aria-label="Uitzoomen">−</button>
                 <button type="button" class="btn btn-small" data-map="reset">Hele kaart</button>
+                <button type="button" class="btn btn-small" data-map="base" aria-pressed="false">Luchtfoto</button>
             </div>
         </div>
     </div>

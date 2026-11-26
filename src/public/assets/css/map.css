@@ -1,0 +1,95 @@
+/*
+ * Kaart van de Oudegracht (Leaflet + PDOK) — gedeeld door de bezoekers-app en het CMS.
+ * Gebruikt de huisstijlvariabelen (--hua-*) van app.css en cms.css.
+ */
+
+.leaflet-container {
+  font-family: var(--font);
+  background: #ece6d4;
+  -webkit-tap-highlight-color: transparent;
+}
+.leaflet-container:focus-visible { outline: 3px solid var(--hua-groenbeige); outline-offset: -3px; }
+.leaflet-container .leaflet-control-attribution {
+  font-size: .7rem;
+  color: #3f3b35;
+  background: rgba(255, 255, 255, .88);
+  border-top-left-radius: 6px;
+}
+.is-offline .leaflet-container, .leaflet-container.is-offline { background: #efe9d9; }
+
+/* ---------- Route van de boot ---------- */
+.og-route-casing { stroke: #fff; stroke-opacity: .8; fill: none; }
+.og-route-line { stroke: var(--hua-paars); stroke-opacity: .85; stroke-dasharray: 2 10; fill: none; }
+.og-route-sailed { stroke: var(--hua-groenbeige); stroke-opacity: 1; fill: none; }
+.is-aerial .og-route-casing { stroke-opacity: 1; }
+
+/* ---------- Genummerde plekken (hotspots) ---------- */
+.og-pin { display: grid; place-items: center; }
+.og-pin.leaflet-interactive { cursor: pointer; }
+.og-pin-dot {
+  display: grid; place-items: center;
+  width: 42px; height: 42px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--hua-paars);
+  color: #fff;
+  font: 800 1.05rem/1 var(--font);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+  transition: background-color .2s, transform .2s;
+}
+.og-pin.is-visited .og-pin-dot { background: #46557e; }
+.og-pin.is-active .og-pin-dot { background: var(--hua-rood); transform: scale(1.2); }
+.og-pin-small .og-pin-dot { width: 28px; height: 28px; border-width: 2px; font-size: .85rem; background: var(--hua-groenbeige); color: var(--hua-paars-donker, #0b1a40); }
+.og-pin-small.is-active .og-pin-dot { background: var(--hua-rood); color: #fff; }
+
+/* ---------- Het bootje ---------- */
+.og-boat { position: relative; width: 56px; height: 56px; }
+.og-boat-halo {
+  position: absolute; inset: 6px;
+  border-radius: 50%;
+  background: rgba(178, 145, 10, .35);
+  animation: og-boat-halo 2.4s ease-in-out infinite;
+}
+.og-boat-shape { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .4)); }
+.og-boat-hull { fill: var(--hua-groenbeige); stroke: var(--hua-paars); stroke-width: 3; stroke-linejoin: round; }
+.og-boat-cabin { fill: var(--hua-paars); }
+@keyframes og-boat-halo { 50% { transform: scale(1.3); opacity: .45; } }
+
+/* ---------- Gekozen plek in het CMS ---------- */
+.og-marker { position: relative; }
+.og-marker-halo { position: absolute; inset: 0; border-radius: 50%; background: rgba(215, 47, 25, .25); }
+.og-marker-dot {
+  position: absolute; left: 50%; top: 50%;
+  width: 26px; height: 26px; margin: -13px 0 0 -13px;
+  border: 4px solid #fff; border-radius: 50%;
+  background: var(--hua-rood);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .45);
+}
+
+/* ---------- Minimap ---------- */
+.og-mm-canal { stroke: var(--hua-groen); stroke-opacity: .8; fill: none; }
+.og-minimap-frame { stroke: var(--hua-rood); fill: var(--hua-paars); fill-opacity: .12; }
+.og-mm-boat { fill: var(--hua-groenbeige); fill-opacity: 1; stroke: var(--hua-paars); stroke-width: 2; }
+
+/* ---------- Noodkaart (zonder internet) ---------- */
+.og-fb-square { fill: #e2d8bb; fill-opacity: 1; stroke: #d3c8a6; }
+.og-fb-street-casing { stroke: #d6ccb0; fill: none; }
+.og-fb-street { stroke: #fffdf7; fill: none; }
+.og-fb-canal-edge { stroke: #6c8f96; fill: none; }
+.og-fb-canal { stroke: #a9cdd2; fill: none; }
+.og-fb-label span {
+  display: inline-block;
+  white-space: nowrap;
+  transform: translate(-50%, 16px);
+  font: 700 .8rem var(--font);
+  color: #3f3b35;
+  text-shadow: 0 0 3px #f6f1e3, 0 0 3px #f6f1e3, 0 0 3px #f6f1e3;
+  pointer-events: none;
+}
+.og-fb-label.is-bridge span { transform: translate(-110%, -50%); color: var(--hua-paars); }
+
+@media (prefers-reduced-motion: reduce) {
+  .og-boat-halo { animation: none; }
+  .og-pin-dot { transition: none; }
+}
+.leaflet-container.is-offline .leaflet-control-attribution { display: none; }

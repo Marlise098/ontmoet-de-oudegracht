@@ -109,11 +109,12 @@ $locationErrors = isset($_SESSION['old']['caption_nl']) ? [] : $errors;
         <div class="map-picker" id="map-picker" tabindex="-1"
              data-others="<?= e(json_encode($mapOthers)) ?>"
              data-route="<?= e(json_encode($mapRoute)) ?>">
-            <svg class="map-picker-svg" role="img" aria-label="Kaart van de Oudegracht om een plek te kiezen"></svg>
+            <div class="map-picker-map" role="region" aria-label="Kaart van de Oudegracht om een plek te kiezen"></div>
             <div class="map-picker-tools">
                 <button type="button" class="btn btn-small" data-map="in" aria-label="Inzoomen">+</button>
                 <button type="button" class="btn btn-small" data-map="out" aria-label="Uitzoomen">−</button>
                 <button type="button" class="btn btn-small" data-map="reset">Hele kaart</button>
+                <button type="button" class="btn btn-small" data-map="base" aria-pressed="false">Luchtfoto</button>
             </div>
         </div>
         <input type="hidden" id="lat" name="lat" value="<?= e((string) $v('lat')) ?>">

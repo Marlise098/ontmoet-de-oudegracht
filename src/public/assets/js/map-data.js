@@ -1,7 +1,8 @@
 /**
  * Kaartgegevens van de Oudegracht (Gaardbrug – Bezembrug).
  * Bron: OpenStreetMap-bijdragers (ODbL). Coördinaten als [lengtegraad, breedtegraad].
- * De kaart wordt hieruit als SVG getekend, zodat hij ook zonder internet werkt.
+ * Hiermee vaart het bootje precies over de gracht, en zonder internet tekent
+ * OudegrachtMap hieruit een eenvoudige noodkaart.
  */
 window.OUDEGRACHT_MAP = {
   bounds: { minLat: 52.0878, maxLat: 52.0926, minLng: 5.1172, maxLng: 5.1232 },

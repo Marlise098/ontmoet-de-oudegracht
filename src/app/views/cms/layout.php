@@ -27,6 +27,8 @@ $asset = static function (string $path): string {
     <meta name="robots" content="noindex, nofollow">
     <title><?= e($title ?? 'CMS') ?> · CMS Ontmoet de Oudegracht</title>
     <link rel="icon" href="../assets/img/logo-hua.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="<?= e($asset('assets/vendor/leaflet/leaflet.css')) ?>">
+    <link rel="stylesheet" href="<?= e($asset('assets/css/map.css')) ?>">
     <link rel="stylesheet" href="<?= e($asset('assets/css/cms.css')) ?>">
 </head>
 <body class="cms">
@@ -76,6 +78,7 @@ $asset = static function (string $path): string {
     </main>
 </div>
 
+<script src="<?= e($asset('assets/vendor/leaflet/leaflet.js')) ?>"></script>
 <script src="<?= e($asset('assets/js/map-data.js')) ?>"></script>
 <script src="<?= e($asset('assets/js/oudegracht-map.js')) ?>"></script>
 <script src="<?= e($asset('assets/js/cms.js')) ?>"></script>

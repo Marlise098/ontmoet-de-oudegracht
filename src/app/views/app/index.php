@@ -10,6 +10,9 @@ $t = $content['texts'];
     <meta name="theme-color" content="#14285a">
     <title><?= e($t['title']['nl']) ?> · Het Utrechts Archief</title>
     <link rel="icon" href="assets/img/logo-hua.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://service.pdok.nl" crossorigin>
+    <link rel="stylesheet" href="<?= e($asset('assets/vendor/leaflet/leaflet.css')) ?>">
+    <link rel="stylesheet" href="<?= e($asset('assets/css/map.css')) ?>">
     <link rel="stylesheet" href="<?= e($asset('assets/css/app.css')) ?>">
 </head>
 <body>
@@ -122,10 +125,15 @@ $t = $content['texts'];
                 </div>
             </div>
             <div class="map-viewport" id="map-viewport">
-                <svg id="map" class="map" role="img" aria-labelledby="map-desc" preserveAspectRatio="xMidYMid meet"></svg>
+                <div id="map" class="map" role="region" aria-labelledby="map-heading" aria-describedby="map-desc"></div>
                 <p id="map-desc" class="visually-hidden" data-i18n="mapDesc">Kaart van de Oudegracht met de route van de boot en de plekken uit de film. Tik op een genummerd punt om daarheen te gaan.</p>
-                <div class="minimap" id="minimap" hidden aria-hidden="true"><svg id="minimap-svg"></svg></div>
+                <div class="minimap" id="minimap" hidden aria-hidden="true"><div id="minimap-map" class="minimap-map"></div></div>
+                <button type="button" class="base-switch" id="map-base" aria-pressed="false">
+                    <span class="base-switch-thumb" aria-hidden="true"></span>
+                    <span data-i18n="aerial">Luchtfoto</span>
+                </button>
                 <p class="map-hint" data-i18n="mapHint">Tik op een nummer om erheen te varen</p>
+                <p class="map-offline" id="map-offline" hidden data-i18n="mapOffline">Geen internet: je ziet een eenvoudige kaart.</p>
             </div>
             <ol class="stop-list visually-hidden" id="stop-list" aria-label="Plekken in de film"></ol>
         </section>
@@ -184,7 +192,7 @@ $t = $content['texts'];
         <dt data-i18n="client">Opdrachtgever</dt><dd>Het Utrechts Archief</dd>
         <dt data-i18n="film">Film</dt><dd><?= e($content['filmCredit']) ?></dd>
         <dt data-i18n="photos">Foto's</dt><dd data-i18n="photosCredit">Beeldbank Het Utrechts Archief. Bij elke foto staan de maker en het catalogusnummer.</dd>
-        <dt data-i18n="mapData">Kaart</dt><dd>© OpenStreetMap-bijdragers</dd>
+        <dt data-i18n="mapData">Kaart</dt><dd data-i18n="mapCredit">Achtergrondkaart en luchtfoto van PDOK (Kadaster en Beeldmateriaal Nederland, CC BY 4.0). Loop van de gracht: © OpenStreetMap-bijdragers.</dd>
         <dt data-i18n="contact">Contact</dt><dd><?= e($content['contact']) ?></dd>
     </dl>
 </dialog>
@@ -223,6 +231,7 @@ $t = $content['texts'];
 <noscript><p class="noscript">Zet JavaScript aan om de film en de kaart te gebruiken.</p></noscript>
 
 <script>window.OUDEGRACHT = <?= json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
+<script src="<?= e($asset('assets/vendor/leaflet/leaflet.js')) ?>"></script>
 <script src="<?= e($asset('assets/js/map-data.js')) ?>"></script>
 <script src="<?= e($asset('assets/js/oudegracht-map.js')) ?>"></script>
 <script src="<?= e($asset('assets/js/app.js')) ?>"></script>
