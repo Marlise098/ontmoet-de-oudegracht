@@ -31,6 +31,12 @@ function take_flashes(): array
     return $messages;
 }
 
+/** Tekstveld uit een formulier ophalen, zonder spaties aan het begin en eind. */
+function input_text(array $input, string $key): string
+{
+    return trim((string) ($input[$key] ?? ''));
+}
+
 /** Formulierwaarde van een vorige (mislukte) poging ophalen. */
 function old(string $key, mixed $default = ''): mixed
 {
@@ -40,8 +46,8 @@ function old(string $key, mixed $default = ''): mixed
 /** Seconden als m:ss tonen, bijvoorbeeld 84 -> "1:24". */
 function format_time(float|int|string $seconds): string
 {
-    $s = max(0, (int) round((float) $seconds));
-    return sprintf('%d:%02d', intdiv($s, 60), $s % 60);
+    $total = max(0, (int) round((float) $seconds));
+    return sprintf('%d:%02d', intdiv($total, 60), $total % 60);
 }
 
 /** "1:24" of "84" of "1:24.5" omzetten naar seconden. Geeft null bij ongeldige invoer. */
@@ -51,8 +57,8 @@ function parse_time(string $input): ?float
     if ($input === '') {
         return null;
     }
-    if (preg_match('/^(\d{1,3}):([0-5]?\d(?:\.\d+)?)$/', $input, $m)) {
-        return (int) $m[1] * 60 + (float) $m[2];
+    if (preg_match('/^(\d{1,3}):([0-5]?\d(?:\.\d+)?)$/', $input, $parts)) {
+        return (int) $parts[1] * 60 + (float) $parts[2];
     }
     if (preg_match('/^\d+(?:\.\d+)?$/', $input)) {
         return (float) $input;
@@ -60,14 +66,14 @@ function parse_time(string $input): ?float
     return null;
 }
 
-/** Tekst inkorten voor overzichten. */
+/** Tekst inkorten voor overzichten (met een beletselteken aan het eind). */
 function excerpt(string $text, int $length = 120): string
 {
     $text = trim(preg_replace('/\s+/', ' ', $text) ?? '');
     return mb_strlen($text) > $length ? rtrim(mb_substr($text, 0, $length - 1)) . '…' : $text;
 }
 
-/** Is dit een geldige http(s)-URL of een pad binnen de site? */
+/** Is dit een geldige http(s)-link of een pad binnen de site (zoals /media/... of uploads/...)? */
 function is_safe_url(string $url): bool
 {
     if ($url === '') {

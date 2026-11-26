@@ -1,6 +1,6 @@
 -- =====================================================================
---  Ontmoet de Oudegracht — databaseschema
---  Het Utrechts Archief · M & A Studio
+--  Ontmoet de Oudegracht: databaseschema
+--  Het Utrechts Archief, M & A Studio
 --
 --  Wordt automatisch ingeladen door de MariaDB-container
 --  (map src/database is gekoppeld aan /docker-entrypoint-initdb.d).

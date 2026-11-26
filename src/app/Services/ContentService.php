@@ -13,52 +13,48 @@ use App\Repositories\SettingRepository;
  */
 final class ContentService
 {
+    /** Alle gepubliceerde inhoud voor de bezoekers-app (wordt als JSON in de pagina gezet). */
     public static function forVisitors(): array
     {
         $settings = SettingRepository::all();
-        $images = ImageRepository::groupedByLocation();
+        $imagesByLocation = ImageRepository::groupedByLocation();
 
         $locations = [];
-        foreach (LocationRepository::all(true) as $loc) {
-            $id = (int) $loc['id'];
+        foreach (LocationRepository::all(true) as $location) {
+            $id = (int) $location['id'];
             $locations[] = [
-                'id'    => $id,
-                'code'  => $loc['code'],
-                'time'  => (float) $loc['start_time'],
-                'lat'   => (float) $loc['lat'],
-                'lng'   => (float) $loc['lng'],
-                'title' => ['nl' => $loc['title_nl'], 'en' => $loc['title_en'] !== '' ? $loc['title_en'] : $loc['title_nl']],
-                'text'  => ['nl' => $loc['text_nl'], 'en' => $loc['text_en'] !== '' ? $loc['text_en'] : $loc['text_nl']],
-                'images' => array_map(static fn (array $img): array => [
-                    'src'     => $img['image_url'],
-                    'source'  => $img['source_url'],
-                    'caption' => ['nl' => $img['caption_nl'], 'en' => $img['caption_en'] !== '' ? $img['caption_en'] : $img['caption_nl']],
-                    'credit'  => $img['credit'],
-                    'catalog' => $img['catalog_number'],
-                    'license' => $img['license'],
-                ], $images[$id] ?? []),
+                'id'     => $id,
+                'code'   => $location['code'],
+                'time'   => (float) $location['start_time'],
+                'lat'    => (float) $location['lat'],
+                'lng'    => (float) $location['lng'],
+                'title'  => self::bothLanguages($location, 'title'),
+                'text'   => self::bothLanguages($location, 'text'),
+                'images' => array_map(static fn (array $image): array => [
+                    'src'     => $image['image_url'],
+                    'source'  => $image['source_url'],
+                    'caption' => self::bothLanguages($image, 'caption'),
+                    'credit'  => $image['credit'],
+                    'catalog' => $image['catalog_number'],
+                    'license' => $image['license'],
+                ], $imagesByLocation[$id] ?? []),
             ];
         }
 
-        $route = array_map(static fn (array $p): array => [
-            't'   => (float) $p['time_sec'],
-            'lat' => (float) $p['lat'],
-            'lng' => (float) $p['lng'],
+        $route = array_map(static fn (array $point): array => [
+            't'   => (float) $point['time_sec'],
+            'lat' => (float) $point['lat'],
+            'lng' => (float) $point['lng'],
         ], RouteRepository::all());
-
-        $bilingual = static fn (string $key): array => [
-            'nl' => $settings[$key . '_nl'] ?? '',
-            'en' => ($settings[$key . '_en'] ?? '') !== '' ? $settings[$key . '_en'] : ($settings[$key . '_nl'] ?? ''),
-        ];
 
         return [
             'texts' => [
-                'title'      => $bilingual('site_title'),
-                'subtitle'   => $bilingual('subtitle'),
-                'introTitle' => $bilingual('intro_title'),
-                'introText'  => $bilingual('intro_text'),
-                'aboutHua'   => $bilingual('about_hua'),
-                'aboutApp'   => $bilingual('about_app'),
+                'title'      => self::bothLanguages($settings, 'site_title'),
+                'subtitle'   => self::bothLanguages($settings, 'subtitle'),
+                'introTitle' => self::bothLanguages($settings, 'intro_title'),
+                'introText'  => self::bothLanguages($settings, 'intro_text'),
+                'aboutHua'   => self::bothLanguages($settings, 'about_hua'),
+                'aboutApp'   => self::bothLanguages($settings, 'about_app'),
             ],
             'makers'      => $settings['makers'],
             'contact'     => $settings['contact'],
@@ -68,5 +64,16 @@ final class ContentService
             'locations'   => $locations,
             'route'       => $route,
         ];
+    }
+
+    /**
+     * Zet de velden {$field}_nl en {$field}_en om naar ['nl' => ..., 'en' => ...].
+     * Is de Engelse tekst leeg, dan wordt de Nederlandse tekst gebruikt.
+     */
+    private static function bothLanguages(array $row, string $field): array
+    {
+        $dutch = $row[$field . '_nl'] ?? '';
+        $english = $row[$field . '_en'] ?? '';
+        return ['nl' => $dutch, 'en' => $english !== '' ? $english : $dutch];
     }
 }

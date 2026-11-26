@@ -34,6 +34,7 @@ final class Controller
         $this->uploads = new UploadService($config['uploads']);
     }
 
+    /** Controleert toegang en rechten, en roept daarna de methode page_{$page} aan. */
     public function handle(string $page): void
     {
         if (!preg_match('/^[a-z_]+$/', $page) || !method_exists($this, 'page_' . $page)) {
@@ -61,7 +62,7 @@ final class Controller
             return;
         }
         // Elk formulier moet een geldig CSRF-token hebben (login controleert dit zelf)
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && $page !== 'login' && !Csrf::valid($_POST['_token'] ?? null)) {
+        if (self::isPost() && $page !== 'login' && !Csrf::valid($_POST['_token'] ?? null)) {
             flash('error', 'Het formulier was verlopen. Probeer het nog een keer.');
             redirect('?page=dashboard');
         }
@@ -76,7 +77,7 @@ final class Controller
     private function page_login(): void
     {
         $error = null;
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (self::isPost()) {
             if (!Csrf::valid($_POST['_token'] ?? null)) {
                 $error = 'Het formulier was verlopen. Probeer het nog een keer.';
             } else {
@@ -91,7 +92,7 @@ final class Controller
 
     private function page_logout(): void
     {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (self::isPost()) {
             Auth::logout();
             flash('success', 'Je bent uitgelogd.');
         }
@@ -105,33 +106,34 @@ final class Controller
     private function page_dashboard(): void
     {
         $locations = LocationRepository::all();
-        $images = ImageRepository::groupedByLocation();
+        $imagesByLocation = ImageRepository::groupedByLocation();
 
         // Aandachtspunten zodat de redactie ziet wat er nog moet gebeuren
         $todo = [];
-        foreach ($locations as $loc) {
-            $id = (int) $loc['id'];
+        foreach ($locations as $location) {
+            $id = (int) $location['id'];
+            $name = $location['code'] . ' ' . $location['title_nl'];
             $link = '?page=location_form&id=' . $id;
-            if (trim($loc['title_en']) === '' || trim($loc['text_en']) === '') {
-                $todo[] = ['text' => "Engelse vertaling ontbreekt bij {$loc['code']} {$loc['title_nl']}", 'link' => $link];
+            if (trim($location['title_en']) === '' || trim($location['text_en']) === '') {
+                $todo[] = ['text' => "Engelse vertaling ontbreekt bij $name", 'link' => $link];
             }
-            if (empty($images[$id])) {
-                $todo[] = ['text' => "Nog geen afbeeldingen bij {$loc['code']} {$loc['title_nl']}", 'link' => $link . '#afbeeldingen'];
+            if (empty($imagesByLocation[$id])) {
+                $todo[] = ['text' => "Nog geen afbeeldingen bij $name", 'link' => $link . '#afbeeldingen'];
             }
-            if (!(int) $loc['is_published']) {
-                $todo[] = ['text' => "{$loc['code']} {$loc['title_nl']} is verborgen voor bezoekers", 'link' => $link];
+            if (!(int) $location['is_published']) {
+                $todo[] = ['text' => "$name is verborgen voor bezoekers", 'link' => $link];
             }
         }
-        $noLicense = 0;
-        foreach ($images as $list) {
-            foreach ($list as $img) {
-                if (trim($img['license']) === '') {
-                    $noLicense++;
+        $withoutLicense = 0;
+        foreach ($imagesByLocation as $images) {
+            foreach ($images as $image) {
+                if (trim($image['license']) === '') {
+                    $withoutLicense++;
                 }
             }
         }
-        if ($noLicense > 0) {
-            $todo[] = ['text' => "Bij $noLicense afbeelding(en) is de licentie nog niet ingevuld", 'link' => '?page=locations'];
+        if ($withoutLicense > 0) {
+            $todo[] = ['text' => "Bij $withoutLicense afbeelding(en) is de licentie nog niet ingevuld", 'link' => '?page=locations'];
         }
 
         View::render('dashboard', [
@@ -166,7 +168,7 @@ final class Controller
             'title'     => $location ? 'Plek bewerken: ' . $location['code'] . ' ' . $location['title_nl'] : 'Nieuwe plek toevoegen',
             'location'  => $location,
             'images'    => $location ? ImageRepository::forLocation($id) : [],
-            'others'    => array_values(array_filter(LocationRepository::all(), static fn ($l) => (int) $l['id'] !== $id)),
+            'others'    => array_values(array_filter(LocationRepository::all(), static fn (array $other): bool => (int) $other['id'] !== $id)),
             'route'     => RouteRepository::all(),
             'videoUrl'  => $settings['video_url'],
             'errors'    => $_SESSION['errors'] ?? [],
@@ -184,10 +186,8 @@ final class Controller
         }
         [$data, $errors] = LocationRepository::validate($_POST);
         if ($errors) {
-            $_SESSION['errors'] = $errors;
-            $_SESSION['old'] = $_POST;
-            flash('error', 'Niet alles is goed ingevuld. Bekijk de rode meldingen hieronder.');
-            redirect('?page=location_form' . ($id ? '&id=' . $id : ''));
+            $this->backWithErrors($errors, 'Niet alles is goed ingevuld. Bekijk de rode meldingen hieronder.',
+                '?page=location_form' . ($id ? '&id=' . $id : ''));
         }
         if ($id) {
             LocationRepository::update($id, $data);
@@ -225,10 +225,11 @@ final class Controller
             $this->notFound('Deze plek bestaat niet (meer).');
             return;
         }
+        // Eerst de afbeeldingen onthouden, zodat de bestanden na het verwijderen kunnen worden opgeruimd
         $images = ImageRepository::forLocation((int) $location['id']);
         Database::transaction(static fn () => LocationRepository::delete((int) $location['id']));
-        foreach ($images as $img) {
-            $this->uploads->delete($img['image_url']);
+        foreach ($images as $image) {
+            $this->uploads->delete($image['image_url']);
         }
         $this->log('location_delete', $location['code'] . ' ' . $location['title_nl']);
         flash('success', 'De plek "' . $location['title_nl'] . '" en ' . count($images) . ' afbeelding(en) zijn verwijderd.');
@@ -255,10 +256,12 @@ final class Controller
             return;
         }
 
+        // Bij het bewerken mag de link leeg blijven: dan blijft de huidige afbeelding staan
         $hasUpload = UploadService::hasFile('upload');
-        [$data, $errors] = ImageRepository::validate($_POST, $hasUpload || ($existing && trim((string) ($_POST['image_url'] ?? '')) === ''));
-        if ($existing && $data['image_url'] === '' && !$hasUpload) {
-            $data['image_url'] = $existing['image_url']; // bestaande afbeelding houden
+        $keepCurrentImage = $existing && !$hasUpload && input_text($_POST, 'image_url') === '';
+        [$data, $errors] = ImageRepository::validate($_POST, $hasUpload || $keepCurrentImage);
+        if ($keepCurrentImage) {
+            $data['image_url'] = $existing['image_url'];
         }
 
         if (!$errors && $hasUpload) {
@@ -269,15 +272,13 @@ final class Controller
             }
         }
         if ($errors) {
-            $_SESSION['errors'] = $errors;
-            $_SESSION['old'] = $_POST;
-            flash('error', 'De afbeelding is niet opgeslagen. Bekijk de rode meldingen.');
-            redirect($back . ($imageId ? '&image=' . $imageId : '') . '#afbeelding-formulier');
+            $this->backWithErrors($errors, 'De afbeelding is niet opgeslagen. Bekijk de rode meldingen.',
+                $back . ($imageId ? '&image=' . $imageId : '') . '#afbeelding-formulier');
         }
 
         if ($existing) {
             if ($existing['image_url'] !== $data['image_url']) {
-                $this->uploads->delete($existing['image_url']);
+                $this->uploads->delete($existing['image_url']); // oude upload opruimen
             }
             ImageRepository::update($imageId, $data);
             $this->log('image_update', excerpt($data['caption_nl'], 80));
@@ -326,7 +327,7 @@ final class Controller
     {
         $errors = [];
         $points = RouteRepository::all();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (self::isPost()) {
             [$points, $errors] = RouteRepository::validate(
                 (array) ($_POST['time'] ?? []),
                 (array) ($_POST['lat'] ?? []),
@@ -357,7 +358,7 @@ final class Controller
     {
         $errors = [];
         $values = SettingRepository::all();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (self::isPost()) {
             [$values, $errors] = SettingRepository::validate($_POST);
             if (!$errors) {
                 Database::transaction(static function () use ($values): void {
@@ -382,12 +383,12 @@ final class Controller
     {
         $user = Auth::user();
         $errors = [];
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $full = UserRepository::find((int) $user['id']);
+        if (self::isPost()) {
+            $stored = UserRepository::find((int) $user['id']); // met wachtwoord-hash
             $current = (string) ($_POST['current_password'] ?? '');
             $new = (string) ($_POST['new_password'] ?? '');
             $repeat = (string) ($_POST['repeat_password'] ?? '');
-            if (!password_verify($current, $full['password_hash'])) {
+            if (!password_verify($current, $stored['password_hash'])) {
                 $errors['current_password'] = 'Je huidige wachtwoord klopt niet.';
             }
             if ($problem = UserRepository::passwordProblem($new)) {
@@ -457,10 +458,8 @@ final class Controller
             $errors['is_active'] = 'Je kunt je eigen account niet uitschakelen.';
         }
         if ($errors) {
-            $_SESSION['errors'] = $errors;
-            $_SESSION['old'] = $_POST;
-            flash('error', 'Niet alles is goed ingevuld. Bekijk de rode meldingen.');
-            redirect('?page=user_form' . ($id ? '&id=' . $id : ''));
+            $this->backWithErrors($errors, 'Niet alles is goed ingevuld. Bekijk de rode meldingen.',
+                '?page=user_form' . ($id ? '&id=' . $id : ''));
         }
         if ($existing) {
             UserRepository::update($id, $data);
@@ -482,10 +481,10 @@ final class Controller
             $this->notFound('Deze gebruiker bestaat niet (meer).');
             return;
         }
-        $temp = self::temporaryPassword();
-        UserRepository::setPassword((int) $target['id'], $temp, true);
+        $temporaryPassword = self::temporaryPassword();
+        UserRepository::setPassword((int) $target['id'], $temporaryPassword, true);
         $this->log('user_update', 'tijdelijk wachtwoord voor ' . $target['username']);
-        flash('success', 'Tijdelijk wachtwoord voor ' . $target['display_name'] . ': ' . $temp . ' — geef dit persoonlijk door. Bij het inloggen moet een nieuw wachtwoord worden gekozen.');
+        flash('success', 'Tijdelijk wachtwoord voor ' . $target['display_name'] . ': ' . $temporaryPassword . ' — geef dit persoonlijk door. Bij het inloggen moet een nieuw wachtwoord worden gekozen.');
         redirect('?page=users');
     }
 
@@ -523,19 +522,42 @@ final class Controller
         $this->notFound('Deze pagina bestaat niet.');
     }
 
+    /* =================================================================
+     *  Hulpfuncties
+     * ================================================================= */
+
+    private static function isPost(): bool
+    {
+        return $_SERVER['REQUEST_METHOD'] === 'POST';
+    }
+
     private function notFound(string $message): void
     {
         http_response_code(404);
         View::render('message', ['title' => 'Niet gevonden', 'message' => $message]);
     }
 
+    /** Acties die iets wijzigen, mogen alleen via een formulier (POST) worden aangeroepen. */
     private function requirePost(): void
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        if (!self::isPost()) {
             redirect('?page=dashboard');
         }
     }
 
+    /**
+     * Terug naar het formulier met foutmeldingen. De ingevulde waarden blijven bewaard,
+     * zodat de gebruiker niets opnieuw hoeft te typen.
+     */
+    private function backWithErrors(array $errors, string $message, string $url): never
+    {
+        $_SESSION['errors'] = $errors;
+        $_SESSION['old'] = $_POST;
+        flash('error', $message);
+        redirect($url);
+    }
+
+    /** Schrijft een actie van de ingelogde gebruiker in het logboek. */
     private function log(string $action, string $details = ''): void
     {
         ActivityRepository::log($action, $details, Auth::user());
@@ -545,6 +567,7 @@ final class Controller
     private static function temporaryPassword(): string
     {
         $words = ['gracht', 'brug', 'werf', 'kelder', 'boot', 'dom', 'markt', 'kade', 'sloep', 'toren'];
-        return $words[random_int(0, 9)] . '-' . random_int(1000, 9999) . '-' . $words[random_int(0, 9)];
+        $randomWord = static fn (): string => $words[random_int(0, count($words) - 1)];
+        return $randomWord() . '-' . random_int(1000, 9999) . '-' . $randomWord();
     }
 }

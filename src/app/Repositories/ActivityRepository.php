@@ -10,6 +10,7 @@ use App\Database;
  */
 final class ActivityRepository
 {
+    /** Schrijft een actie in het logboek, met wie het deed en vanaf welk IP-adres. */
     public static function log(string $action, string $details = '', ?array $user = null): void
     {
         Database::run(
@@ -25,8 +26,10 @@ final class ActivityRepository
         );
     }
 
+    /** De laatste acties, zonder mislukte inlogpogingen. */
     public static function recent(int $limit = 15): array
     {
+        // $limit staat los in de query (LIMIT kan geen parameter zijn), daarom eerst begrenzen
         $limit = max(1, min(100, $limit));
         return Database::all(
             "SELECT * FROM activity_log WHERE action NOT IN ('login_failed') ORDER BY created_at DESC, id DESC LIMIT $limit"

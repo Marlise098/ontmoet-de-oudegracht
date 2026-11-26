@@ -11,6 +11,16 @@ use App\Repositories\UserRepository;
  */
 final class Auth
 {
+    /** Na zoveel seconden zonder activiteit wordt de gebruiker uitgelogd (2 uur). */
+    private const SESSION_TIMEOUT = 7200;
+
+    /**
+     * Hash van een willekeurig wachtwoord. Wordt gecontroleerd als de gebruikersnaam
+     * niet bestaat, zodat een aanvaller aan de responstijd niet kan zien of een naam bestaat.
+     */
+    private const DUMMY_HASH = '$2y$10$zincI8bhb50TJDESoxQN0.Kc0dsch.j7ZS9qIcLsQDYSkoVDNdL0W';
+
+    /** De ingelogde gebruiker, bewaard zodat de database maar een keer per verzoek wordt gevraagd. */
     private static ?array $user = null;
 
     /** Start een veilige sessie. */
@@ -31,9 +41,8 @@ final class Auth
         ini_set('session.use_strict_mode', '1');
         session_start();
 
-        // Sessie verloopt na 2 uur zonder activiteit
         $now = time();
-        if (isset($_SESSION['last_seen']) && $now - $_SESSION['last_seen'] > 7200) {
+        if (isset($_SESSION['last_seen']) && $now - $_SESSION['last_seen'] > self::SESSION_TIMEOUT) {
             $_SESSION = [];
             session_regenerate_id(true);
             flash('info', 'Je was een tijd niet actief en bent uitgelogd. Log opnieuw in.');
@@ -55,20 +64,19 @@ final class Auth
         }
 
         $user = UserRepository::findByUsername($username);
-        // Ook bij een onbekende gebruiker een hash controleren, zodat de responstijd gelijk blijft
-        $hash = $user['password_hash'] ?? '$2y$10$zincI8bhb50TJDESoxQN0.Kc0dsch.j7ZS9qIcLsQDYSkoVDNdL0W';
-        $valid = password_verify($password, $hash);
+        $passwordOk = password_verify($password, $user['password_hash'] ?? self::DUMMY_HASH);
 
-        if (!$user || !$valid || !(int) $user['is_active']) {
+        if (!$user || !$passwordOk || !(int) $user['is_active']) {
             ActivityRepository::log('login_failed', 'Mislukte inlogpoging', ['id' => null, 'username' => $username]);
             return 'De gebruikersnaam of het wachtwoord klopt niet.';
         }
 
+        // Wachtwoord opnieuw versleutelen als PHP inmiddels een sterkere methode gebruikt
         if (password_needs_rehash($user['password_hash'], PASSWORD_DEFAULT)) {
             UserRepository::setPassword((int) $user['id'], $password, (bool) $user['must_change_pw']);
         }
 
-        session_regenerate_id(true);
+        session_regenerate_id(true); // nieuwe sessie-id tegen session fixation
         $_SESSION['user_id'] = (int) $user['id'];
         UserRepository::touchLogin((int) $user['id']);
         ActivityRepository::log('login', '', $user);
@@ -86,7 +94,7 @@ final class Auth
         session_regenerate_id(true);
     }
 
-    /** De ingelogde gebruiker, of null. */
+    /** De ingelogde gebruiker (zonder wachtwoord-hash), of null. */
     public static function user(): ?array
     {
         if (self::$user !== null) {

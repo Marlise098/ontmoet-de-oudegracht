@@ -19,7 +19,7 @@ final class View
         require $file;
         $content = ob_get_clean();
 
-        // Oude formulierwaarden zijn na één keer tonen niet meer nodig
+        // Oude formulierwaarden zijn na een keer tonen niet meer nodig
         unset($_SESSION['old'], $_SESSION['errors']);
 
         require APP_ROOT . '/views/cms/' . $layout . '.php';

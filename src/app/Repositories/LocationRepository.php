@@ -59,7 +59,8 @@ final class LocationRepository
 
     public static function delete(int $id): void
     {
-        // Afbeeldingen worden via ON DELETE CASCADE mee verwijderd
+        // De afbeeldingen eerst zelf verwijderen. In MariaDB doet ON DELETE CASCADE dit ook,
+        // maar zo werkt het ook in de SQLite-testdatabase.
         Database::run('DELETE FROM images WHERE location_id = ?', [$id]);
         Database::run('DELETE FROM locations WHERE id = ?', [$id]);
     }
@@ -72,11 +73,11 @@ final class LocationRepository
     {
         $errors = [];
         $data = [
-            'code'         => trim((string) ($input['code'] ?? '')),
-            'title_nl'     => trim((string) ($input['title_nl'] ?? '')),
-            'title_en'     => trim((string) ($input['title_en'] ?? '')),
-            'text_nl'      => trim((string) ($input['text_nl'] ?? '')),
-            'text_en'      => trim((string) ($input['text_en'] ?? '')),
+            'code'         => input_text($input, 'code'),
+            'title_nl'     => input_text($input, 'title_nl'),
+            'title_en'     => input_text($input, 'title_en'),
+            'text_nl'      => input_text($input, 'text_nl'),
+            'text_en'      => input_text($input, 'text_en'),
             'is_published' => !empty($input['is_published']) ? 1 : 0,
         ];
 
@@ -105,6 +106,7 @@ final class LocationRepository
         }
         $data['start_time'] = $time ?? 0;
 
+        // De plek moet in (de buurt van) de binnenstad van Utrecht liggen
         $lat = filter_var($input['lat'] ?? '', FILTER_VALIDATE_FLOAT);
         $lng = filter_var($input['lng'] ?? '', FILTER_VALIDATE_FLOAT);
         if ($lat === false || $lng === false || $lat < 52.0 || $lat > 52.2 || $lng < 5.0 || $lng > 5.25) {

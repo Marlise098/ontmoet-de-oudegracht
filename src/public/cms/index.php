@@ -1,6 +1,6 @@
 <?php
 /**
- * CMS 'Ontmoet de Oudegracht' — één ingang voor alle beheerpagina's.
+ * CMS 'Ontmoet de Oudegracht': de enige ingang voor alle beheerpagina's.
  */
 declare(strict_types=1);
 

@@ -35,13 +35,14 @@ final class ImageRepository
         return (int) Database::value('SELECT COUNT(*) FROM images');
     }
 
+    /** Voegt een afbeelding achteraan toe bij een locatie. */
     public static function create(int $locationId, array $data): int
     {
-        $next = (int) Database::value('SELECT COALESCE(MAX(sort_order), 0) + 1 FROM images WHERE location_id = ?', [$locationId]);
+        $nextPosition = (int) Database::value('SELECT COALESCE(MAX(sort_order), 0) + 1 FROM images WHERE location_id = ?', [$locationId]);
         Database::run(
             'INSERT INTO images (location_id, image_url, source_url, caption_nl, caption_en, credit, catalog_number, license, sort_order, created_at)
              VALUES (:location_id, :image_url, :source_url, :caption_nl, :caption_en, :credit, :catalog_number, :license, :sort_order, :created_at)',
-            $data + ['location_id' => $locationId, 'sort_order' => $next, 'created_at' => Database::now()]
+            $data + ['location_id' => $locationId, 'sort_order' => $nextPosition, 'created_at' => Database::now()]
         );
         return Database::lastId();
     }
@@ -61,40 +62,46 @@ final class ImageRepository
         Database::run('DELETE FROM images WHERE id = ?', [$id]);
     }
 
-    /** Verplaatst een afbeelding één plek omhoog (-1) of omlaag (+1). */
+    /** Verplaatst een afbeelding een plek omhoog (-1) of omlaag (+1). */
     public static function move(int $id, int $direction): void
     {
         $image = self::find($id);
         if (!$image) {
             return;
         }
-        $siblings = self::forLocation((int) $image['location_id']);
-        $ids = array_map(static fn ($r) => (int) $r['id'], $siblings);
-        $pos = array_search($id, $ids, true);
-        $target = $pos + ($direction < 0 ? -1 : 1);
-        if ($pos === false || $target < 0 || $target >= count($ids)) {
+        // Volgorde van alle afbeeldingen bij deze locatie, en de plek van deze afbeelding daarin
+        $ids = array_map(static fn (array $row): int => (int) $row['id'], self::forLocation((int) $image['location_id']));
+        $from = array_search($id, $ids, true);
+        if ($from === false) {
             return;
         }
-        [$ids[$pos], $ids[$target]] = [$ids[$target], $ids[$pos]];
+        $to = $from + ($direction < 0 ? -1 : 1);
+        if ($to < 0 || $to >= count($ids)) {
+            return; // staat al bovenaan of onderaan
+        }
+        [$ids[$from], $ids[$to]] = [$ids[$to], $ids[$from]];
         Database::transaction(static function () use ($ids): void {
-            foreach ($ids as $i => $imageId) {
-                Database::run('UPDATE images SET sort_order = ? WHERE id = ?', [$i + 1, $imageId]);
+            foreach ($ids as $index => $imageId) {
+                Database::run('UPDATE images SET sort_order = ? WHERE id = ?', [$index + 1, $imageId]);
             }
         });
     }
 
-    /** Controleert de invoer. image_url mag leeg zijn als er een upload is. */
+    /**
+     * Controleert de invoer. Geeft [schone data, foutmeldingen per veld] terug.
+     * Met $hasUpload = true mag image_url leeg zijn (de afbeelding komt dan uit de upload).
+     */
     public static function validate(array $input, bool $hasUpload): array
     {
         $errors = [];
         $data = [
-            'image_url'      => trim((string) ($input['image_url'] ?? '')),
-            'source_url'     => trim((string) ($input['source_url'] ?? '')),
-            'caption_nl'     => trim((string) ($input['caption_nl'] ?? '')),
-            'caption_en'     => trim((string) ($input['caption_en'] ?? '')),
-            'credit'         => trim((string) ($input['credit'] ?? '')),
-            'catalog_number' => trim((string) ($input['catalog_number'] ?? '')),
-            'license'        => trim((string) ($input['license'] ?? '')),
+            'image_url'      => input_text($input, 'image_url'),
+            'source_url'     => input_text($input, 'source_url'),
+            'caption_nl'     => input_text($input, 'caption_nl'),
+            'caption_en'     => input_text($input, 'caption_en'),
+            'credit'         => input_text($input, 'credit'),
+            'catalog_number' => input_text($input, 'catalog_number'),
+            'license'        => input_text($input, 'license'),
         ];
 
         if (!$hasUpload) {
@@ -110,6 +117,7 @@ final class ImageRepository
         if ($data['caption_nl'] === '') {
             $errors['caption_nl'] = 'Beschrijf kort wat er op de afbeelding te zien is.';
         }
+        // Maximale lengte per veld, gelijk aan de kolommen in de database
         foreach (['caption_nl' => 500, 'caption_en' => 500, 'credit' => 255, 'catalog_number' => 50, 'license' => 50] as $field => $max) {
             if (mb_strlen($data[$field]) > $max) {
                 $errors[$field] = "Maximaal $max tekens.";

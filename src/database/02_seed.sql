@@ -1,5 +1,5 @@
 -- =====================================================================
---  Ontmoet de Oudegracht — startinhoud
+--  Ontmoet de Oudegracht: startinhoud
 --  Teksten en afbeeldingen komen uit 'Bronmateriaal en info' van
 --  Het Utrechts Archief (Ellen Blom). Alles is aan te passen in het CMS.
 -- =====================================================================

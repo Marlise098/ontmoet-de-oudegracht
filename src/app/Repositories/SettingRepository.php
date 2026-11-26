@@ -37,6 +37,7 @@ final class SettingRepository
                              'help' => 'Bijvoorbeeld 180 (= 3 minuten). Vul 0 in om dit uit te zetten.'],
     ];
 
+    /** Alle instellingen. Velden die nog niet in de database staan, zijn een lege tekst. */
     public static function all(): array
     {
         $values = array_fill_keys(array_keys(self::FIELDS), '');
@@ -52,20 +53,24 @@ final class SettingRepository
         return $value === null ? $default : (string) $value;
     }
 
+    /** Slaat een instelling op. Bestaat de sleutel nog niet, dan wordt hij toegevoegd. */
     public static function set(string $key, string $value): void
     {
+        // rowCount() is 0 als de sleutel ontbreekt, maar ook als de waarde niet veranderde.
+        // Daarom daarna nog controleren of de sleutel echt ontbreekt.
         $updated = Database::run('UPDATE settings SET value = ? WHERE setting_key = ?', [$value, $key])->rowCount();
-        if ($updated === 0 && Database::value('SELECT COUNT(*) FROM settings WHERE setting_key = ?', [$key]) == 0) {
+        if ($updated === 0 && (int) Database::value('SELECT COUNT(*) FROM settings WHERE setting_key = ?', [$key]) === 0) {
             Database::run('INSERT INTO settings (setting_key, value) VALUES (?, ?)', [$key, $value]);
         }
     }
 
+    /** Controleert de invoer. Geeft [waarden per sleutel, foutmeldingen per veld] terug. */
     public static function validate(array $input): array
     {
         $data = [];
         $errors = [];
         foreach (self::FIELDS as $key => $field) {
-            $value = trim((string) ($input[$key] ?? ''));
+            $value = input_text($input, $key);
             if (!empty($field['required']) && $value === '') {
                 $errors[$key] = 'Dit veld is verplicht.';
             }
